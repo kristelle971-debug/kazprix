@@ -869,6 +869,7 @@ async function selectionnerProduit(produitId) {
 
   // Plusieurs prix → afficher le choix
   produitEnSelection = p;
+  modeRemplacement = false; // depuis la recherche = on ajoute
   fermerModal('modal-panier');
   afficherChoixPrix(p);
 }
@@ -879,14 +880,25 @@ async function selectionnerPrixPourPanier(produitId) {
     .eq('id', produitId).single();
   if (!p) return;
   produitEnSelection = p;
+  modeRemplacement = true; // depuis la fiche = on remplace sans toucher à la quantité
   fermerModal('modal-produit');
   if (!p.prix?.length) {
     await ajouterAuPanierDepuisProduit(produitId);
     changerVue('panier');
   } else if (p.prix.length === 1) {
     const px = p.prix[0];
-    await ajouterAuPanierDepuisProduit(produitId, px.montant, px.magasins?.nom, px.est_promo);
-    changerVue('panier');
+    // Même logique : remplacer si déjà dans le panier
+    const existant = panier.find(i => i.produit_id === produitId);
+    if (existant) {
+      existant.montant = px.montant;
+      existant.est_promo = px.est_promo || false;
+      existant.magasin_nom = px.magasins?.nom || '';
+      afficherToast('Prix mis à jour ✓');
+      changerVue('panier');
+    } else {
+      await ajouterAuPanierDepuisProduit(produitId, px.montant, px.magasins?.nom, px.est_promo);
+      changerVue('panier');
+    }
   } else {
     afficherChoixPrix(p);
   }
@@ -894,6 +906,7 @@ async function selectionnerPrixPourPanier(produitId) {
 
 // Tableau global pour stocker les prix du choix (évite JSON.stringify des objets complexes)
 let prixChoixActuels = [];
+let modeRemplacement = false; // true = on remplace le prix, false = on ajoute au panier
 
 function afficherChoixPrix(p) {
   document.getElementById('choix-prix-titre').textContent = p.nom;
@@ -943,8 +956,26 @@ async function confirmerChoixPrix(index) {
   const px = prixChoixActuels[index];
   if (!px) return;
   fermerModal('modal-choix-prix');
-  await ajouterAuPanierDepuisProduit(produitEnSelection.id, px.montant, px.magasins?.nom, px.est_promo);
-  changerVue('panier');
+
+  if (modeRemplacement) {
+    // On remplace le prix dans la ligne existante sans toucher à la quantité
+    const existant = panier.find(i => i.produit_id === produitEnSelection.id);
+    if (existant) {
+      existant.montant = px.montant;
+      existant.est_promo = px.est_promo || false;
+      existant.magasin_nom = px.magasins?.nom || '';
+      existant.panier_key = produitEnSelection.id + '_' + (px.magasins?.nom||'');
+      afficherToast('Prix mis à jour ✓');
+      changerVue('panier');
+    } else {
+      // Pas encore dans le panier → on l'ajoute normalement
+      await ajouterAuPanierDepuisProduit(produitEnSelection.id, px.montant, px.magasins?.nom, px.est_promo);
+      changerVue('panier');
+    }
+  } else {
+    await ajouterAuPanierDepuisProduit(produitEnSelection.id, px.montant, px.magasins?.nom, px.est_promo);
+    changerVue('panier');
+  }
 }
 
 async function ajouterSansPrix() {
