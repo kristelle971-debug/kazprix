@@ -4,594 +4,184 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KazPrix – Surveille les prix en Guadeloupe</title>
-  <meta name="description" content="Suivez et comparez les prix dans les supermarchés de Guadeloupe" />
   <meta name="theme-color" content="#1a472a" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     :root {
-      --vert: #1a472a;
-      --vert-clair: #2d6a4f;
-      --vert-accent: #52b788;
-      --vert-pale: #d8f3dc;
-      --jaune: #f4c430;
-      --jaune-pale: #fff8e1;
-      --rouge: #e63946;
-      --blanc: #fafaf8;
-      --gris-clair: #f0efeb;
-      --gris: #8a8a8a;
-      --texte: #1a1a1a;
-      --carte: #ffffff;
-      --ombre: 0 2px 12px rgba(0,0,0,0.08);
-      --radius: 16px;
-      --radius-sm: 10px;
-      --transition: 0.2s ease;
+      --vert: #1a472a; --vert-clair: #2d6a4f; --vert-accent: #52b788; --vert-pale: #d8f3dc;
+      --jaune: #f4c430; --rouge: #e63946; --blanc: #fafaf8; --gris-clair: #f0efeb;
+      --gris: #8a8a8a; --texte: #1a1a1a; --carte: #ffffff;
+      --ombre: 0 2px 12px rgba(0,0,0,0.08); --radius: 16px; --radius-sm: 10px; --transition: 0.2s ease;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--blanc); color: var(--texte); min-height: 100vh; max-width: 480px; margin: 0 auto; overflow-x: hidden; }
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--blanc);
-      color: var(--texte);
-      min-height: 100vh;
-      max-width: 480px;
-      margin: 0 auto;
-      position: relative;
-      overflow-x: hidden;
-    }
-
-    /* ===== HEADER ===== */
-    .header {
-      background: var(--vert);
-      color: white;
-      padding: 20px 20px 16px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .logo {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 24px;
-      letter-spacing: -0.5px;
-    }
+    /* HEADER */
+    .header { background: var(--vert); color: white; padding: 16px 20px; position: sticky; top: 0; z-index: 100; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 24px; }
     .logo span { color: var(--jaune); }
-
-    /* Total panier header */
-    .panier-totaux {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 8px;
-      align-items: center;
-      background: rgba(255,255,255,0.1);
-      border-radius: var(--radius-sm);
-      padding: 10px 14px;
-    }
+    .panier-totaux { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; background: rgba(255,255,255,0.12); border-radius: var(--radius-sm); padding: 10px 14px; }
     .total-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
     .total-value { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
     .total-min { text-align: right; }
     .total-min .total-value { color: var(--jaune); font-size: 16px; }
-    .total-separateur { text-align: center; }
-    .economie-badge {
-      background: var(--jaune);
-      color: var(--vert);
-      font-weight: 700;
-      font-size: 11px;
-      border-radius: 20px;
-      padding: 3px 8px;
-      display: none;
-    }
+    .economie-badge { background: var(--jaune); color: var(--vert); font-weight: 700; font-size: 11px; border-radius: 20px; padding: 3px 8px; }
 
-    /* ===== NAV TABS ===== */
-    .nav-tabs {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      background: white;
-      border-bottom: 1px solid var(--gris-clair);
-      position: sticky;
-      top: 0;
-      z-index: 99;
-    }
-    .nav-tab {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      padding: 10px 4px;
-      cursor: pointer;
-      border: none;
-      background: none;
-      color: var(--gris);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 10px;
-      font-weight: 500;
-      transition: var(--transition);
-      border-bottom: 2px solid transparent;
-    }
-    .nav-tab.active { color: var(--vert); border-bottom-color: var(--vert); }
-    .nav-tab svg { width: 20px; height: 20px; }
-
-    /* ===== MAIN CONTENT ===== */
+    /* MAIN */
     .main { padding: 16px; padding-bottom: 100px; }
 
-    /* ===== VUE PANIER ===== */
-    .panier-toolbar {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .btn-filtre {
-      flex: 1;
-      padding: 8px 12px;
-      border: 1px solid var(--gris-clair);
-      border-radius: 20px;
-      background: white;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--gris);
-      transition: var(--transition);
-    }
-    .btn-filtre.active { background: var(--vert); color: white; border-color: var(--vert); }
-    .btn-vider {
-      padding: 8px 14px;
-      border: 1px solid var(--rouge);
-      border-radius: 20px;
-      background: white;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      color: var(--rouge);
-      cursor: pointer;
-    }
+    /* PANIER TOOLBAR */
+    .panier-toolbar { margin-bottom: 14px; }
+    .tri-row { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; padding-bottom: 2px; }
+    .tri-row::-webkit-scrollbar { display: none; }
+    .btn-tri { padding: 7px 14px; border: 1.5px solid var(--gris-clair); border-radius: 20px; background: white; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--gris); white-space: nowrap; transition: var(--transition); flex-shrink: 0; }
+    .btn-tri.active { background: var(--vert); color: white; border-color: var(--vert); }
+    .btn-vider { padding: 7px 14px; border: 1.5px solid var(--rouge); border-radius: 20px; background: white; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--rouge); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 
-    .panier-vide {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--gris);
-    }
+    /* PANIER ITEMS */
+    .panier-vide { text-align: center; padding: 60px 20px; color: var(--gris); }
     .panier-vide .icon { font-size: 48px; margin-bottom: 12px; }
-    .panier-vide p { font-size: 15px; margin-bottom: 20px; }
-
-    .panier-item {
-      background: var(--carte);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin-bottom: 10px;
-      box-shadow: var(--ombre);
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      animation: slideIn 0.2s ease;
-    }
-    @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-    .item-photo {
-      width: 52px;
-      height: 52px;
-      border-radius: 10px;
-      background: var(--gris-clair);
-      object-fit: cover;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-    }
+    .groupe-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gris); margin: 16px 0 8px; padding-left: 4px; }
+    .panier-item { background: var(--carte); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; box-shadow: var(--ombre); display: flex; gap: 12px; align-items: center; cursor: pointer; transition: var(--transition); animation: slideIn 0.2s ease; }
+    .panier-item:active { transform: scale(0.98); }
+    @keyframes slideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .item-photo { width: 48px; height: 48px; border-radius: 10px; background: var(--gris-clair); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; overflow: hidden; }
+    .item-photo img { width: 100%; height: 100%; object-fit: cover; }
     .item-info { flex: 1; min-width: 0; }
-    .item-nom {
-      font-weight: 600;
-      font-size: 14px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .item-meta { font-size: 11px; color: var(--gris); margin-top: 2px; }
-    .item-prix { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--vert); }
-    .promo-badge {
-      background: var(--rouge);
-      color: white;
-      font-size: 9px;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 10px;
-      margin-left: 4px;
-    }
-    .item-qty {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-    .qty-btn {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 1px solid var(--gris-clair);
-      background: white;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--vert);
-      font-weight: 700;
-      transition: var(--transition);
-    }
+    .item-nom { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-meta { font-size: 11px; color: var(--gris); margin-top: 1px; }
+    .item-prix { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--vert); margin-top: 3px; }
+    .promo-badge { background: var(--rouge); color: white; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 8px; margin-left: 4px; }
+    .item-qty { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .qty-btn { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--gris-clair); background: white; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--vert); font-weight: 700; }
     .qty-btn:active { background: var(--vert); color: white; }
-    .qty-num { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; min-width: 20px; text-align: center; }
+    .qty-num { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; min-width: 18px; text-align: center; }
 
-    /* ===== BTN AJOUTER ===== */
-    .fab {
-      position: fixed;
-      bottom: 80px;
-      right: 20px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: var(--vert);
-      color: white;
-      border: none;
-      font-size: 28px;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(26,71,42,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 98;
-      transition: transform 0.2s ease;
-    }
+    /* FAB */
+    .fab { position: fixed; bottom: 76px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--vert); color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 20px rgba(26,71,42,0.4); display: flex; align-items: center; justify-content: center; z-index: 98; transition: transform 0.2s ease; }
     .fab:active { transform: scale(0.93); }
 
-    /* ===== MAGASINS ===== */
-    .section-title {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 18px;
-      margin-bottom: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .btn-ajouter-sm {
-      background: var(--vert);
-      color: white;
-      border: none;
-      border-radius: 20px;
-      padding: 6px 14px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      cursor: pointer;
-    }
+    /* SECTION */
+    .section-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .btn-ajouter-sm { background: var(--vert); color: white; border: none; border-radius: 20px; padding: 7px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
 
-    .magasin-card {
-      background: var(--carte);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 10px;
-      box-shadow: var(--ombre);
-      cursor: pointer;
-      transition: var(--transition);
-    }
-    .magasin-card:active { transform: scale(0.98); }
+    /* CATEGORIES GRID */
+    .categories-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .categorie-card { background: var(--carte); border-radius: var(--radius); padding: 16px 10px; box-shadow: var(--ombre); display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: var(--transition); text-align: center; }
+    .categorie-card:active { transform: scale(0.95); background: var(--vert-pale); }
+    .cat-icon { font-size: 28px; }
+    .cat-nom { font-weight: 600; font-size: 11px; line-height: 1.3; color: var(--texte); }
+    .cat-count { font-size: 10px; color: var(--gris); background: var(--gris-clair); padding: 2px 8px; border-radius: 10px; }
+
+    /* MAGASINS */
+    .magasin-card { background: var(--carte); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; box-shadow: var(--ombre); }
     .magasin-nom { font-weight: 600; font-size: 15px; }
     .magasin-ville { font-size: 12px; color: var(--gris); margin-top: 2px; }
     .magasin-stats { font-size: 12px; color: var(--vert-accent); margin-top: 6px; font-weight: 500; }
     .magasin-actions { display: flex; gap: 8px; margin-top: 10px; }
-    .btn-edit, .btn-del {
-      flex: 1;
-      padding: 6px;
-      border-radius: 8px;
-      border: 1px solid var(--gris-clair);
-      background: white;
-      font-size: 12px;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .btn-del { color: var(--rouge); border-color: var(--rouge); }
+    .btn-edit, .btn-del { flex: 1; padding: 7px; border-radius: 8px; border: 1px solid var(--gris-clair); background: white; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .btn-del { color: var(--rouge); border-color: #ffd0d3; }
 
-    /* ===== CATEGORIES ===== */
-    .categorie-card {
-      background: var(--carte);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      margin-bottom: 8px;
-      box-shadow: var(--ombre);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-    .categorie-card:active { transform: scale(0.98); }
-    .cat-icon { font-size: 24px; width: 40px; text-align: center; }
-    .cat-nom { font-weight: 600; font-size: 14px; flex: 1; }
-    .cat-count { font-size: 12px; color: var(--gris); }
-    .cat-arrow { color: var(--gris); }
+    /* PRODUITS */
+    .produit-card { background: var(--carte); border-radius: var(--radius); padding: 14px; margin-bottom: 8px; box-shadow: var(--ombre); display: flex; gap: 12px; align-items: center; cursor: pointer; transition: var(--transition); }
+    .produit-card:active { transform: scale(0.98); }
+    .produit-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-add-panier { background: var(--vert); color: white; border: none; border-radius: 8px; padding: 7px 10px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
 
-    /* ===== PRODUITS LISTE ===== */
-    .produit-card {
-      background: var(--carte);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin-bottom: 8px;
-      box-shadow: var(--ombre);
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-    .produit-actions { display: flex; gap: 6px; }
-    .btn-add-panier {
-      background: var(--vert);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 6px 10px;
-      font-size: 12px;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-    }
+    /* BACK */
+    .back-btn { display: flex; align-items: center; gap: 8px; color: var(--vert); font-weight: 600; font-size: 14px; cursor: pointer; margin-bottom: 16px; }
 
-    /* ===== MODAL ===== */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 200;
-      display: flex;
-      align-items: flex-end;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
-    .modal-overlay.open { opacity: 1; pointer-events: all; }
-    .modal {
-      background: white;
-      border-radius: 24px 24px 0 0;
-      padding: 24px 20px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      transform: translateY(100%);
-      transition: transform 0.3s ease;
-    }
-    .modal-overlay.open .modal { transform: translateY(0); }
-    .modal-handle { width: 40px; height: 4px; background: var(--gris-clair); border-radius: 2px; margin: 0 auto 20px; }
-    .modal-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; margin-bottom: 20px; }
-
-    /* ===== FORM ===== */
-    .form-group { margin-bottom: 14px; }
-    .form-label { font-size: 12px; font-weight: 600; color: var(--gris); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
-    .form-input, .form-select, .form-textarea {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1.5px solid var(--gris-clair);
-      border-radius: var(--radius-sm);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      background: white;
-      color: var(--texte);
-      transition: border-color 0.2s;
-      -webkit-appearance: none;
-    }
-    .form-input:focus, .form-select:focus { outline: none; border-color: var(--vert); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .form-checkbox { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1.5px solid var(--gris-clair); border-radius: var(--radius-sm); cursor: pointer; }
-    .form-checkbox input { width: 18px; height: 18px; accent-color: var(--rouge); }
-    .form-checkbox label { font-size: 14px; cursor: pointer; }
-
-    .btn-primary {
-      width: 100%;
-      padding: 15px;
-      background: var(--vert);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 8px;
-      transition: var(--transition);
-    }
-    .btn-primary:active { transform: scale(0.98); }
-
-    /* Recherche produit */
-    .search-bar {
-      position: relative;
-      margin-bottom: 14px;
-    }
-    .search-input {
-      width: 100%;
-      padding: 12px 40px 12px 14px;
-      border: 1.5px solid var(--gris-clair);
-      border-radius: 20px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 14px;
-      background: var(--gris-clair);
-    }
-    .search-input:focus { outline: none; border-color: var(--vert); background: white; }
-    .search-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--gris); }
-
-    .search-results { max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
-    .search-result-item {
-      padding: 10px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: var(--transition);
-    }
-    .search-result-item:hover { background: var(--gris-clair); }
-    .result-nom { font-weight: 500; font-size: 14px; }
-    .result-prix { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--vert); }
-
-    .divider { text-align: center; color: var(--gris); font-size: 12px; margin: 14px 0; position: relative; }
-    .divider::before { content: ''; position: absolute; left: 0; top: 50%; width: 40%; height: 1px; background: var(--gris-clair); }
-    .divider::after { content: ''; position: absolute; right: 0; top: 50%; width: 40%; height: 1px; background: var(--gris-clair); }
-
-    /* Scan barcode */
-    .btn-scan {
-      width: 100%;
-      padding: 12px;
-      border: 1.5px dashed var(--vert);
-      border-radius: var(--radius-sm);
-      background: var(--vert-pale);
-      color: var(--vert);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-
-    /* Photo upload */
-    .photo-upload {
-      width: 100%;
-      height: 100px;
-      border: 1.5px dashed var(--gris-clair);
-      border-radius: var(--radius-sm);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      cursor: pointer;
-      color: var(--gris);
-      font-size: 13px;
-      overflow: hidden;
-      position: relative;
-    }
-    .photo-upload img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-    .photo-upload input { display: none; }
-
-    /* Toast */
-    .toast {
-      position: fixed;
-      bottom: 90px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: var(--texte);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 14px;
-      z-index: 300;
-      opacity: 0;
-      transition: all 0.3s ease;
-      white-space: nowrap;
-    }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    /* Loading */
-    .loading { text-align: center; padding: 40px; color: var(--gris); }
-    .spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid var(--gris-clair);
-      border-top-color: var(--vert);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 12px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Vue détail magasin / catégorie */
-    .back-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--vert);
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      margin-bottom: 16px;
-    }
-
-    /* Bottom nav */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 480px;
-      background: white;
-      border-top: 1px solid var(--gris-clair);
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      z-index: 100;
-    }
-    .bottom-nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      padding: 10px 4px 14px;
-      cursor: pointer;
-      border: none;
-      background: none;
-      color: var(--gris);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 10px;
-      font-weight: 500;
-      transition: var(--transition);
-    }
-    .bottom-nav-item.active { color: var(--vert); }
-    .bottom-nav-item svg { width: 22px; height: 22px; }
-
-    /* Scanner overlay */
-    #qr-reader { width: 100% !important; border-radius: var(--radius-sm); overflow: hidden; }
-    #qr-reader video { border-radius: var(--radius-sm); }
-
-    .prix-historique {
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid var(--gris-clair);
-    }
-    .prix-ligne {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px 0;
-      font-size: 12px;
-    }
+    /* PRIX HISTORIQUE */
+    .prix-historique { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--gris-clair); }
+    .prix-ligne { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; }
     .prix-ligne-magasin { color: var(--gris); }
     .prix-ligne-montant { font-weight: 600; color: var(--vert); }
     .prix-ligne-montant.promo { color: var(--rouge); }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal { background: white; border-radius: 24px 24px 0 0; padding: 20px 20px 30px; width: 100%; max-height: 92vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s ease; }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-handle { width: 40px; height: 4px; background: var(--gris-clair); border-radius: 2px; margin: 0 auto 18px; }
+    .modal-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; margin-bottom: 18px; }
+
+    /* FORM */
+    .form-group { margin-bottom: 13px; }
+    .form-label { font-size: 11px; font-weight: 600; color: var(--gris); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; display: block; }
+    .form-input, .form-select { width: 100%; padding: 11px 13px; border: 1.5px solid var(--gris-clair); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 15px; background: white; color: var(--texte); -webkit-appearance: none; }
+    .form-input:focus, .form-select:focus { outline: none; border-color: var(--vert); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-checkbox { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border: 1.5px solid var(--gris-clair); border-radius: var(--radius-sm); cursor: pointer; }
+    .form-checkbox input { width: 18px; height: 18px; accent-color: var(--rouge); flex-shrink: 0; }
+    .section-form { border-top: 1px solid var(--gris-clair); padding-top: 14px; margin-top: 4px; margin-bottom: 13px; }
+    .section-form-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 12px; }
+
+    /* SEARCH */
+    .search-bar { position: relative; margin-bottom: 12px; }
+    .search-input { width: 100%; padding: 11px 40px 11px 14px; border: 1.5px solid var(--gris-clair); border-radius: 20px; font-family: 'DM Sans', sans-serif; font-size: 14px; background: var(--gris-clair); }
+    .search-input:focus { outline: none; border-color: var(--vert); background: white; }
+    .search-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); }
+    .search-results { max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
+    .search-result-item { padding: 10px 12px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .search-result-item:active { background: var(--gris-clair); }
+    .result-nom { font-weight: 500; font-size: 14px; }
+    .result-prix { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--vert); }
+    .divider { text-align: center; color: var(--gris); font-size: 12px; margin: 12px 0; position: relative; }
+    .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 38%; height: 1px; background: var(--gris-clair); }
+    .divider::before { left: 0; } .divider::after { right: 0; }
+
+    /* SCAN */
+    .btn-scan { width: 100%; padding: 12px; border: 1.5px dashed var(--vert); border-radius: var(--radius-sm); background: var(--vert-pale); color: var(--vert); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; }
+    #qr-reader { width: 100% !important; border-radius: var(--radius-sm); overflow: hidden; }
+
+    /* PHOTO */
+    .photo-upload { width: 100%; height: 90px; border: 1.5px dashed var(--gris-clair); border-radius: var(--radius-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; color: var(--gris); font-size: 12px; overflow: hidden; position: relative; }
+    .photo-upload img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .photo-upload input { display: none; }
+
+    /* BTN */
+    .btn-primary { width: 100%; padding: 14px; background: var(--vert); color: white; border: none; border-radius: var(--radius); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 6px; }
+    .btn-primary:active { opacity: 0.9; }
+    .btn-secondary { width: 100%; padding: 13px; background: white; color: var(--gris); border: 1.5px solid var(--gris-clair); border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 15px; cursor: pointer; margin-top: 6px; }
+
+    /* BOTTOM NAV */
+    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: white; border-top: 1px solid var(--gris-clair); display: grid; grid-template-columns: repeat(4, 1fr); z-index: 100; }
+    .bottom-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 12px; cursor: pointer; border: none; background: none; color: var(--gris); font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 500; }
+    .bottom-nav-item.active { color: var(--vert); }
+    .bottom-nav-item svg { width: 22px; height: 22px; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 86px; left: 50%; transform: translateX(-50%) translateY(10px); background: #1a1a1a; color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; z-index: 300; opacity: 0; transition: all 0.25s ease; white-space: nowrap; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* LOADING */
+    .loading { text-align: center; padding: 50px 20px; color: var(--gris); }
+    .spinner { width: 30px; height: 30px; border: 3px solid var(--gris-clair); border-top-color: var(--vert); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <div class="header" id="header">
   <div class="header-top">
     <div class="logo">Kaz<span>Prix</span></div>
-    <span style="font-size:12px;opacity:0.7">Guadeloupe 🌿</span>
+    <span style="font-size:11px;opacity:0.7">Guadeloupe 🌿</span>
   </div>
   <div class="panier-totaux" id="panier-totaux" style="display:none">
     <div>
       <div class="total-label">Total panier</div>
       <div class="total-value" id="total-actuel">0,00 €</div>
     </div>
-    <div class="total-separateur">
-      <div class="economie-badge" id="economie-badge">-0,00 €</div>
+    <div style="text-align:center">
+      <div class="economie-badge" id="economie-badge" style="display:none">économie</div>
     </div>
     <div class="total-min">
       <div class="total-label">Prix min possible</div>
@@ -600,12 +190,10 @@
   </div>
 </div>
 
-<!-- MAIN -->
 <div class="main" id="main-content">
   <div class="loading"><div class="spinner"></div>Chargement...</div>
 </div>
 
-<!-- BOTTOM NAV -->
 <div class="bottom-nav">
   <button class="bottom-nav-item active" onclick="changerVue('panier')" id="nav-panier">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
@@ -625,32 +213,26 @@
   </button>
 </div>
 
-<!-- FAB -->
-<button class="fab" onclick="ouvrirModalAjouter()" id="fab-btn" title="Ajouter au panier">+</button>
+<button class="fab" onclick="ouvrirModalAjouter()" id="fab-btn">+</button>
 
 <!-- MODAL AJOUTER AU PANIER -->
 <div class="modal-overlay" id="modal-panier">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Ajouter un article</div>
-
     <div class="search-bar">
-      <input type="text" class="search-input" id="search-produit" placeholder="Rechercher un produit..." oninput="rechercherProduit(this.value)" />
+      <input type="text" class="search-input" id="search-produit" placeholder="Rechercher un produit..." oninput="rechercherProduit(this.value)" autocomplete="off" />
       <span class="search-icon">🔍</span>
     </div>
     <div class="search-results" id="search-results"></div>
-
-    <button class="btn-scan" onclick="ouvrirScanner()">
-      <span>📷</span> Scanner un code-barres
-    </button>
-    <div id="qr-container" style="display:none;margin-bottom:14px">
+    <button class="btn-scan" onclick="ouvrirScanner()">📷 Scanner un code-barres</button>
+    <div id="qr-container" style="display:none;margin-bottom:12px">
       <div id="qr-reader"></div>
-      <button onclick="arreterScanner()" style="width:100%;margin-top:8px;padding:10px;border:1px solid var(--gris-clair);border-radius:10px;background:white;cursor:pointer;font-family:'DM Sans',sans-serif">Annuler le scan</button>
+      <button onclick="arreterScanner()" class="btn-secondary" style="margin-top:8px">Annuler le scan</button>
     </div>
-
     <div class="divider">ou créer un nouveau produit</div>
-    <button class="btn-primary" onclick="ouvrirModalProduit()" style="background:var(--vert-clair)">+ Créer une fiche produit</button>
-    <button class="btn-primary" onclick="fermerModal('modal-panier')" style="background:white;color:var(--gris);border:1px solid var(--gris-clair);margin-top:8px">Annuler</button>
+    <button class="btn-primary" onclick="ouvrirModalProduit(null)" style="background:var(--vert-clair)">+ Créer une fiche produit</button>
+    <button class="btn-secondary" onclick="fermerModal('modal-panier')">Annuler</button>
   </div>
 </div>
 
@@ -673,18 +255,14 @@
       <label class="form-label">Nom du produit *</label>
       <input type="text" class="form-input" id="prod-nom" placeholder="Ex: Yaourt grec citron" />
     </div>
-
     <div class="form-group">
       <label class="form-label">Marque</label>
       <input type="text" class="form-input" id="prod-marque" placeholder="Ex: Yoplait" />
     </div>
-
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Catégorie *</label>
-        <select class="form-select" id="prod-categorie">
-          <option value="">Choisir...</option>
-        </select>
+        <select class="form-select" id="prod-categorie"><option value="">Choisir...</option></select>
       </div>
       <div class="form-group">
         <label class="form-label">Sous-catégorie</label>
@@ -692,24 +270,7 @@
       </div>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Unité</label>
-        <select class="form-select" id="prod-unite">
-          <option value="pièce">Pièce</option>
-          <option value="g">Grammes (g)</option>
-          <option value="kg">Kilogrammes (kg)</option>
-          <option value="ml">Millilitres (ml)</option>
-          <option value="L">Litres (L)</option>
-          <option value="cl">Centilitres (cl)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Contenance</label>
-        <input type="number" class="form-input" id="prod-contenance" placeholder="Ex: 500" />
-      </div>
-    </div>
-
+    <!-- FORMAT EN PREMIER -->
     <div class="form-group">
       <label class="form-label">Format / Conditionnement</label>
       <select class="form-select" id="prod-format">
@@ -726,7 +287,34 @@
         <option value="tube">Tube</option>
         <option value="barquette">Barquette</option>
         <option value="pièce">Pièce unique</option>
+        <option value="filet">Filet</option>
+        <option value="plateau">Plateau</option>
       </select>
+    </div>
+
+    <!-- QUANTITE CONDITIONNEMENT -->
+    <div class="form-group">
+      <label class="form-label">Quantité dans le conditionnement</label>
+      <input type="number" class="form-input" id="prod-qte-cond" placeholder="Ex: 6 (pour un pack de 6)" min="1" />
+    </div>
+
+    <!-- UNITE + CONTENANCE -->
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Unité</label>
+        <select class="form-select" id="prod-unite">
+          <option value="pièce">Pièce</option>
+          <option value="g">Grammes (g)</option>
+          <option value="kg">Kilogrammes (kg)</option>
+          <option value="ml">Millilitres (ml)</option>
+          <option value="L">Litres (L)</option>
+          <option value="cl">Centilitres (cl)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contenance / Poids</label>
+        <input type="number" class="form-input" id="prod-contenance" placeholder="Ex: 500" />
+      </div>
     </div>
 
     <div class="form-group">
@@ -734,9 +322,8 @@
       <input type="text" class="form-input" id="prod-code-barres" placeholder="Ex: 3256540001234" />
     </div>
 
-    <div style="border-top:1px solid var(--gris-clair);padding-top:16px;margin-top:4px;margin-bottom:14px">
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:12px">💰 Prix</div>
-
+    <div class="section-form">
+      <div class="section-form-title">💰 Prix</div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Prix (€) *</label>
@@ -744,12 +331,9 @@
         </div>
         <div class="form-group">
           <label class="form-label">Magasin *</label>
-          <select class="form-select" id="prod-magasin">
-            <option value="">Choisir...</option>
-          </select>
+          <select class="form-select" id="prod-magasin"><option value="">Choisir...</option></select>
         </div>
       </div>
-
       <div class="form-checkbox">
         <input type="checkbox" id="prod-promo" />
         <label for="prod-promo">🏷️ Prix en promotion</label>
@@ -757,7 +341,7 @@
     </div>
 
     <button class="btn-primary" onclick="sauvegarderProduit()">✓ Enregistrer</button>
-    <button class="btn-primary" onclick="fermerModal('modal-produit')" style="background:white;color:var(--gris);border:1px solid var(--gris-clair);margin-top:8px">Annuler</button>
+    <button class="btn-secondary" onclick="fermerModal('modal-produit')">Annuler</button>
   </div>
 </div>
 
@@ -775,40 +359,31 @@
       <input type="text" class="form-input" id="mag-ville" placeholder="Ex: Baie-Mahault" />
     </div>
     <button class="btn-primary" onclick="sauvegarderMagasin()">✓ Enregistrer</button>
-    <button class="btn-primary" onclick="fermerModal('modal-magasin')" style="background:white;color:var(--gris);border:1px solid var(--gris-clair);margin-top:8px">Annuler</button>
+    <button class="btn-secondary" onclick="fermerModal('modal-magasin')">Annuler</button>
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== CONFIG SUPABASE =====
 const SUPABASE_URL = 'https://tmxlaowolvvsikoknpvi.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRteGxhb3dvbHZ2c2lrb2tucHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3ODA0MjIsImV4cCI6MjA5NjM1NjQyMn0.whRwW-69mkqpi0ioKzG4Q2DOssJtxdQw-rOC7YtIWBk';
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ===== ÉTAT APP =====
 let vueActuelle = 'panier';
 let categories = [];
 let magasins = [];
-let panier = []; // [{produit, quantite, prix_id, montant}]
+let panier = [];
 let produitEnEdition = null;
 let magasinEnEdition = null;
 let scannerInstance = null;
+let triPanier = 'nom';
 
-const ICONES_CATEGORIES = {
-  'Alimentation': '🍽️',
-  'Boissons': '🥤',
-  'Produits laitiers': '🥛',
-  'Surgelés': '🧊',
-  'Hygiène & Entretien': '🧴',
-  'Animalerie': '🐾',
-  'Épicerie sucrée': '🍪',
-  'Épicerie salée': '🥫',
-  'Fruits & Légumes': '🥦',
-  'Boucherie & Poissonnerie': '🥩',
+const ICONES = {
+  'Alimentation':'🍽️','Boissons':'🥤','Produits laitiers':'🥛','Surgelés':'🧊',
+  'Hygiène & Entretien':'🧴','Animalerie':'🐾','Épicerie sucrée':'🍪',
+  'Épicerie salée':'🥫','Fruits & Légumes':'🥦','Boucherie & Poissonnerie':'🥩'
 };
 
 // ===== INIT =====
@@ -820,25 +395,27 @@ async function init() {
 async function chargerCategories() {
   const { data } = await db.from('categories').select('*').order('nom');
   categories = data || [];
+  remplirSelectCategories();
+}
+
+function remplirSelectCategories() {
   const sel = document.getElementById('prod-categorie');
-  if (sel) {
-    sel.innerHTML = '<option value="">Choisir...</option>';
-    categories.forEach(c => {
-      sel.innerHTML += `<option value="${c.id}">${c.nom}</option>`;
-    });
-  }
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Choisir...</option>';
+  categories.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nom}</option>`);
 }
 
 async function chargerMagasins() {
   const { data } = await db.from('magasins').select('*').order('nom');
   magasins = data || [];
+  remplirSelectMagasins();
+}
+
+function remplirSelectMagasins() {
   const sel = document.getElementById('prod-magasin');
-  if (sel) {
-    sel.innerHTML = '<option value="">Choisir...</option>';
-    magasins.forEach(m => {
-      sel.innerHTML += `<option value="${m.id}">${m.nom} – ${m.ville}</option>`;
-    });
-  }
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Choisir...</option>';
+  magasins.forEach(m => sel.innerHTML += `<option value="${m.id}">${m.nom} – ${m.ville}</option>`);
 }
 
 // ===== NAVIGATION =====
@@ -846,194 +423,204 @@ function changerVue(vue) {
   vueActuelle = vue;
   document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
   document.getElementById('nav-' + vue)?.classList.add('active');
-
   const fab = document.getElementById('fab-btn');
   const totaux = document.getElementById('panier-totaux');
-
-  if (vue === 'panier') {
-    fab.style.display = 'flex';
-    totaux.style.display = 'grid';
-    renderPanier();
-  } else if (vue === 'produits') {
-    fab.style.display = 'none';
-    totaux.style.display = 'none';
-    renderProduits();
-  } else if (vue === 'magasins') {
-    fab.style.display = 'none';
-    totaux.style.display = 'none';
-    renderMagasins();
-  } else if (vue === 'categories') {
-    fab.style.display = 'none';
-    totaux.style.display = 'none';
-    renderCategories();
-  }
+  fab.style.display = vue === 'panier' ? 'flex' : 'none';
+  totaux.style.display = (vue === 'panier' && panier.length > 0) ? 'grid' : 'none';
+  if (vue === 'panier') renderPanier();
+  else if (vue === 'produits') renderProduits();
+  else if (vue === 'magasins') renderMagasins();
+  else if (vue === 'categories') renderCategories();
 }
 
 // ===== PANIER =====
 function renderPanier() {
   const main = document.getElementById('main-content');
+  const totaux = document.getElementById('panier-totaux');
   if (panier.length === 0) {
-    main.innerHTML = `
-      <div class="panier-vide">
-        <div class="icon">🛒</div>
-        <p>Votre panier est vide</p>
-        <p style="font-size:13px;color:var(--gris)">Appuyez sur + pour ajouter des articles</p>
-      </div>`;
-    mettreAJourTotaux();
+    totaux.style.display = 'none';
+    main.innerHTML = `<div class="panier-vide"><div class="icon">🛒</div><p>Votre panier est vide</p><p style="font-size:13px">Appuyez sur + pour ajouter des articles</p></div>`;
     return;
   }
+  totaux.style.display = 'grid';
+
+  // Tri
+  let items = [...panier];
+  if (triPanier === 'nom') items.sort((a,b) => a.nom.localeCompare(b.nom));
+  else if (triPanier === 'magasin') items.sort((a,b) => (a.magasin_nom||'').localeCompare(b.magasin_nom||''));
+  else if (triPanier === 'categorie') items.sort((a,b) => (a.categorie_nom||'').localeCompare(b.categorie_nom||''));
 
   let html = `
     <div class="panier-toolbar">
-      <button class="btn-filtre active">Tout</button>
-      <button class="btn-vider" onclick="viderPanier()">🗑 Vider</button>
+      <div class="tri-row">
+        <button class="btn-tri ${triPanier==='nom'?'active':''}" onclick="setTri('nom')">Nom</button>
+        <button class="btn-tri ${triPanier==='magasin'?'active':''}" onclick="setTri('magasin')">Magasin</button>
+        <button class="btn-tri ${triPanier==='categorie'?'active':''}" onclick="setTri('categorie')">Catégorie</button>
+        <button class="btn-vider" onclick="viderPanier()">🗑 Vider</button>
+      </div>
     </div>`;
 
-  panier.forEach((item, i) => {
-    const icone = ICONES_CATEGORIES[item.categorie_nom] || '📦';
-    html += `
-      <div class="panier-item">
-        <div class="item-photo">${icone}</div>
-        <div class="item-info">
-          <div class="item-nom">${item.nom}${item.marque ? ' <span style="font-weight:400;color:var(--gris)">' + item.marque + '</span>' : ''}</div>
-          <div class="item-meta">${item.magasin_nom || ''} · ${item.format || ''} ${item.contenance || ''} ${item.unite || ''}</div>
-          <div style="margin-top:4px">
-            <span class="item-prix">${(item.montant || 0).toFixed(2).replace('.',',')} €</span>
-            ${item.est_promo ? '<span class="promo-badge">PROMO</span>' : ''}
-          </div>
-        </div>
-        <div class="item-qty">
-          <button class="qty-btn" onclick="modifierQty(${i}, -1)">−</button>
-          <span class="qty-num">${item.quantite}</span>
-          <button class="qty-btn" onclick="modifierQty(${i}, 1)">+</button>
-        </div>
-      </div>`;
-  });
+  // Grouper si tri magasin ou catégorie
+  if (triPanier === 'magasin' || triPanier === 'categorie') {
+    const key = triPanier === 'magasin' ? 'magasin_nom' : 'categorie_nom';
+    const groupes = {};
+    items.forEach(item => {
+      const k = item[key] || 'Autre';
+      if (!groupes[k]) groupes[k] = [];
+      groupes[k].push(item);
+    });
+    Object.entries(groupes).forEach(([label, groupe]) => {
+      html += `<div class="groupe-label">${label}</div>`;
+      groupe.forEach(item => {
+        const idx = panier.findIndex(i => i.produit_id === item.produit_id);
+        html += renderPanierItem(item, idx);
+      });
+    });
+  } else {
+    items.forEach(item => {
+      const idx = panier.findIndex(i => i.produit_id === item.produit_id);
+      html += renderPanierItem(item, idx);
+    });
+  }
 
   main.innerHTML = html;
   mettreAJourTotaux();
 }
 
+function renderPanierItem(item, idx) {
+  const icone = ICONES[item.categorie_nom] || '📦';
+  const photoHtml = item.photo_url
+    ? `<img src="${item.photo_url}" />`
+    : icone;
+  return `
+    <div class="panier-item" onclick="ouvrirFicheProduit('${item.produit_id}')">
+      <div class="item-photo">${photoHtml}</div>
+      <div class="item-info">
+        <div class="item-nom">${item.nom}${item.marque ? ' <span style="font-weight:400;color:var(--gris);font-size:12px">'+item.marque+'</span>' : ''}</div>
+        <div class="item-meta">${item.magasin_nom || ''} · ${item.format||''} ${item.contenance?item.contenance+' ':''} ${item.unite||''}</div>
+        <div style="margin-top:3px">
+          <span class="item-prix">${((item.montant||0)*item.quantite).toFixed(2).replace('.',',')} €</span>
+          ${item.est_promo ? '<span class="promo-badge">PROMO</span>' : ''}
+        </div>
+      </div>
+      <div class="item-qty" onclick="event.stopPropagation()">
+        <button class="qty-btn" onclick="modifierQty(${idx}, -1)">−</button>
+        <span class="qty-num">${item.quantite}</span>
+        <button class="qty-btn" onclick="modifierQty(${idx}, 1)">+</button>
+      </div>
+    </div>`;
+}
+
+function setTri(tri) {
+  triPanier = tri;
+  renderPanier();
+}
+
 function modifierQty(index, delta) {
   panier[index].quantite += delta;
-  if (panier[index].quantite <= 0) {
-    panier.splice(index, 1);
-  }
+  if (panier[index].quantite <= 0) panier.splice(index, 1);
   renderPanier();
 }
 
 function viderPanier() {
-  if (confirm('Vider le panier ?')) {
-    panier = [];
-    renderPanier();
-    afficherToast('Panier vidé');
-  }
+  if (confirm('Vider le panier ?')) { panier = []; renderPanier(); afficherToast('Panier vidé'); }
 }
 
 function mettreAJourTotaux() {
-  const total = panier.reduce((s, i) => s + (i.montant || 0) * i.quantite, 0);
-  document.getElementById('total-actuel').textContent = total.toFixed(2).replace('.', ',') + ' €';
-  document.getElementById('total-min').textContent = total.toFixed(2).replace('.', ',') + ' €';
-  document.getElementById('panier-totaux').style.display = panier.length > 0 ? 'grid' : 'none';
+  const total = panier.reduce((s, i) => s + (i.montant||0) * i.quantite, 0);
+  document.getElementById('total-actuel').textContent = total.toFixed(2).replace('.',',') + ' €';
+  document.getElementById('total-min').textContent = total.toFixed(2).replace('.',',') + ' €';
 }
 
 // ===== PRODUITS =====
 async function renderProduits() {
   const main = document.getElementById('main-content');
   main.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
-
   const { data: produits } = await db.from('produits')
-    .select('*, categories(nom), prix(montant, est_promo, magasins(nom, ville))')
+    .select('*, categories(nom), prix(montant, est_promo, magasins(nom,ville))')
     .order('nom');
 
-  let html = `<div class="section-title">Tous les produits <button class="btn-ajouter-sm" onclick="ouvrirModalProduit()">+ Ajouter</button></div>`;
-
+  let html = `<div class="section-title">Produits <button class="btn-ajouter-sm" onclick="ouvrirModalProduit(null)">+ Ajouter</button></div>`;
   if (!produits?.length) {
     html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun produit enregistré</p>';
   } else {
     produits.forEach(p => {
-      const prixMin = p.prix?.length ? Math.min(...p.prix.map(x => x.montant)) : null;
-      const icone = ICONES_CATEGORIES[p.categories?.nom] || '📦';
+      const prixMin = p.prix?.length ? Math.min(...p.prix.map(x=>x.montant)) : null;
+      const icone = ICONES[p.categories?.nom] || '📦';
       html += `
-        <div class="produit-card">
+        <div class="produit-card" onclick="ouvrirFicheProduit('${p.id}')">
           <div class="item-photo">${icone}</div>
           <div class="item-info">
             <div class="item-nom">${p.nom}</div>
-            <div class="item-meta">${p.marque || ''} · ${p.categories?.nom || ''}</div>
-            ${prixMin !== null ? `<div class="item-prix" style="margin-top:4px">${prixMin.toFixed(2).replace('.',',')} €</div>` : ''}
+            <div class="item-meta">${p.marque||''} · ${p.categories?.nom||''}</div>
+            ${prixMin !== null ? `<div class="item-prix" style="margin-top:3px">${prixMin.toFixed(2).replace('.',',')} €</div>` : ''}
           </div>
-          <div class="produit-actions">
+          <div class="produit-actions" onclick="event.stopPropagation()">
             <button class="btn-add-panier" onclick="ajouterAuPanierDepuisProduit('${p.id}')">+ Panier</button>
           </div>
         </div>`;
     });
   }
-
   main.innerHTML = html;
 }
 
+async function ouvrirFicheProduit(produitId) {
+  const { data: p } = await db.from('produits')
+    .select('*, categories(nom), prix(id, montant, est_promo, date_enregistrement, magasins(nom,ville))')
+    .eq('id', produitId).single();
+  if (!p) return;
+  ouvrirModalProduit(p);
+}
+
 async function ajouterAuPanierDepuisProduit(produitId) {
-  const { data: produit } = await db.from('produits')
+  const { data: p } = await db.from('produits')
     .select('*, categories(nom), prix(id, montant, est_promo, magasins(nom))')
-    .eq('id', produitId)
-    .single();
-
-  if (!produit) return;
-
+    .eq('id', produitId).single();
+  if (!p) return;
   const existant = panier.find(i => i.produit_id === produitId);
   if (existant) {
     existant.quantite++;
-    afficherToast('Quantité mise à jour');
+    afficherToast('Quantité mise à jour ✓');
   } else {
-    const prixItem = produit.prix?.[0];
+    const px = p.prix?.[0];
     panier.push({
-      produit_id: produitId,
-      nom: produit.nom,
-      marque: produit.marque,
-      categorie_nom: produit.categories?.nom,
-      format: produit.format,
-      contenance: produit.contenance,
-      unite: produit.unite,
-      montant: prixItem?.montant || 0,
-      est_promo: prixItem?.est_promo || false,
-      magasin_nom: prixItem?.magasins?.nom || '',
-      quantite: 1
+      produit_id: produitId, nom: p.nom, marque: p.marque,
+      categorie_nom: p.categories?.nom, format: p.format,
+      contenance: p.contenance, unite: p.unite,
+      montant: px?.montant || 0, est_promo: px?.est_promo || false,
+      magasin_nom: px?.magasins?.nom || '', quantite: 1
     });
     afficherToast('Ajouté au panier ✓');
   }
+  if (vueActuelle === 'panier') renderPanier();
 }
 
 // ===== MAGASINS =====
 async function renderMagasins() {
   const main = document.getElementById('main-content');
   main.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
-
   const { data } = await db.from('magasins').select('*').order('nom');
-
-  // Compter les prix par magasin
   const { data: prixData } = await db.from('prix').select('magasin_id');
   const counts = {};
-  prixData?.forEach(p => { counts[p.magasin_id] = (counts[p.magasin_id] || 0) + 1; });
+  prixData?.forEach(p => { counts[p.magasin_id] = (counts[p.magasin_id]||0)+1; });
 
   let html = `<div class="section-title">Magasins <button class="btn-ajouter-sm" onclick="ouvrirModalMagasin()">+ Ajouter</button></div>`;
-
   if (!data?.length) {
-    html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun magasin enregistré</p>';
+    html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun magasin</p>';
   } else {
     data.forEach(m => {
       html += `
         <div class="magasin-card">
           <div class="magasin-nom">🏪 ${m.nom}</div>
           <div class="magasin-ville">📍 ${m.ville}</div>
-          <div class="magasin-stats">${counts[m.id] || 0} prix enregistré(s)</div>
+          <div class="magasin-stats">${counts[m.id]||0} prix enregistré(s)</div>
           <div class="magasin-actions">
-            <button class="btn-edit" onclick="editerMagasin('${m.id}', '${m.nom}', '${m.ville}')">✏️ Modifier</button>
+            <button class="btn-edit" onclick="ouvrirModalMagasin('${m.id}','${m.nom.replace(/'/g,"\\'")}','${m.ville.replace(/'/g,"\\'")}')">✏️ Modifier</button>
             <button class="btn-del" onclick="supprimerMagasin('${m.id}')">🗑 Supprimer</button>
           </div>
         </div>`;
     });
   }
-
   main.innerHTML = html;
 }
 
@@ -1045,21 +632,15 @@ function ouvrirModalMagasin(id, nom, ville) {
   document.getElementById('modal-magasin').classList.add('open');
 }
 
-function editerMagasin(id, nom, ville) {
-  ouvrirModalMagasin(id, nom, ville);
-}
-
 async function sauvegarderMagasin() {
   const nom = document.getElementById('mag-nom').value.trim();
   const ville = document.getElementById('mag-ville').value.trim();
   if (!nom || !ville) { afficherToast('Nom et ville requis'); return; }
-
   if (magasinEnEdition) {
-    await db.from('magasins').update({ nom, ville }).eq('id', magasinEnEdition);
+    await db.from('magasins').update({nom, ville}).eq('id', magasinEnEdition);
   } else {
-    await db.from('magasins').insert({ nom, ville });
+    await db.from('magasins').insert({nom, ville});
   }
-
   await chargerMagasins();
   fermerModal('modal-magasin');
   afficherToast(magasinEnEdition ? 'Magasin modifié ✓' : 'Magasin ajouté ✓');
@@ -1079,75 +660,66 @@ async function supprimerMagasin(id) {
 async function renderCategories() {
   const main = document.getElementById('main-content');
   main.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
-
   const { data: cats } = await db.from('categories').select('*').order('nom');
   const { data: prods } = await db.from('produits').select('categorie_id');
   const counts = {};
-  prods?.forEach(p => { counts[p.categorie_id] = (counts[p.categorie_id] || 0) + 1; });
+  prods?.forEach(p => { counts[p.categorie_id] = (counts[p.categorie_id]||0)+1; });
 
-  let html = `<div class="section-title">Catégories</div>`;
-
+  let html = `<div class="section-title">Catégories</div><div class="categories-grid">`;
   cats?.forEach(c => {
-    const icone = ICONES_CATEGORIES[c.nom] || '📦';
+    const icone = ICONES[c.nom] || '📦';
     html += `
-      <div class="categorie-card" onclick="voirCategorie('${c.id}', '${c.nom}')">
+      <div class="categorie-card" onclick="voirCategorie('${c.id}','${c.nom.replace(/'/g,"\\'")}')">
         <div class="cat-icon">${icone}</div>
         <div class="cat-nom">${c.nom}</div>
-        <div class="cat-count">${counts[c.id] || 0} article(s)</div>
-        <div class="cat-arrow">›</div>
+        <div class="cat-count">${counts[c.id]||0}</div>
       </div>`;
   });
-
+  html += '</div>';
   main.innerHTML = html;
 }
 
 async function voirCategorie(catId, catNom) {
   const main = document.getElementById('main-content');
   main.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
-
   const { data: produits } = await db.from('produits')
     .select('*, prix(montant, est_promo, magasins(nom))')
-    .eq('categorie_id', catId)
-    .order('nom');
+    .eq('categorie_id', catId).order('nom');
 
-  const icone = ICONES_CATEGORIES[catNom] || '📦';
+  const icone = ICONES[catNom] || '📦';
   let html = `
     <div class="back-btn" onclick="renderCategories()">‹ Retour</div>
     <div class="section-title">${icone} ${catNom}</div>`;
 
   if (!produits?.length) {
-    html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun produit dans cette catégorie</p>';
+    html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun produit</p>';
   } else {
     produits.forEach(p => {
-      const prixMin = p.prix?.length ? Math.min(...p.prix.map(x => x.montant)) : null;
+      const prixMin = p.prix?.length ? Math.min(...p.prix.map(x=>x.montant)) : null;
       html += `
-        <div class="produit-card">
+        <div class="produit-card" onclick="ouvrirFicheProduit('${p.id}')">
           <div class="item-photo">${icone}</div>
           <div class="item-info">
             <div class="item-nom">${p.nom}</div>
-            <div class="item-meta">${p.marque || ''} · ${p.format || ''} ${p.contenance || ''} ${p.unite || ''}</div>
-            ${prixMin !== null ? `<div class="item-prix" style="margin-top:4px">${prixMin.toFixed(2).replace('.',',')} €</div>` : ''}
-            ${p.prix?.length > 1 ? `
-              <div class="prix-historique">
-                ${p.prix.map(px => `
-                  <div class="prix-ligne">
-                    <span class="prix-ligne-magasin">${px.magasins?.nom || ''}</span>
-                    <span class="prix-ligne-montant ${px.est_promo ? 'promo' : ''}">${px.montant.toFixed(2).replace('.',',')} € ${px.est_promo ? '🏷️' : ''}</span>
-                  </div>`).join('')}
-              </div>` : ''}
+            <div class="item-meta">${p.marque||''}</div>
+            ${prixMin !== null ? `<div class="item-prix" style="margin-top:3px">${prixMin.toFixed(2).replace('.',',')} €</div>` : ''}
+            ${p.prix?.length > 1 ? `<div class="prix-historique">${p.prix.map(px=>`
+              <div class="prix-ligne">
+                <span class="prix-ligne-magasin">${px.magasins?.nom||''}</span>
+                <span class="prix-ligne-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} € ${px.est_promo?'🏷️':''}</span>
+              </div>`).join('')}</div>` : ''}
           </div>
-          <div class="produit-actions">
+          <div class="produit-actions" onclick="event.stopPropagation()">
             <button class="btn-add-panier" onclick="ajouterAuPanierDepuisProduit('${p.id}')">+ Panier</button>
           </div>
         </div>`;
     });
   }
-
   main.innerHTML = html;
   document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
 }
 
-// ===== MODAL AJOUTER AU PANIER =====
+// ===== MODAL AJOUTER =====
 function ouvrirModalAjouter() {
   document.getElementById('search-produit').value = '';
   document.getElementById('search-results').innerHTML = '';
@@ -1155,32 +727,21 @@ function ouvrirModalAjouter() {
 }
 
 async function rechercherProduit(query) {
-  if (!query.trim()) {
-    document.getElementById('search-results').innerHTML = '';
-    return;
-  }
-
+  if (!query.trim()) { document.getElementById('search-results').innerHTML = ''; return; }
   const { data } = await db.from('produits')
-    .select('*, prix(montant, est_promo, magasins(nom))')
-    .ilike('nom', `%${query}%`)
-    .limit(8);
-
+    .select('*, prix(montant)')
+    .ilike('nom', `%${query}%`).limit(8);
   const container = document.getElementById('search-results');
   if (!data?.length) {
     container.innerHTML = '<div style="color:var(--gris);font-size:13px;padding:10px">Aucun résultat</div>';
     return;
   }
-
   container.innerHTML = data.map(p => {
-    const prixMin = p.prix?.length ? Math.min(...p.prix.map(x => x.montant)) : null;
-    return `
-      <div class="search-result-item" onclick="selectionnerProduit('${p.id}')">
-        <div>
-          <div class="result-nom">${p.nom}</div>
-          <div style="font-size:11px;color:var(--gris)">${p.marque || ''}</div>
-        </div>
-        ${prixMin !== null ? `<span class="result-prix">${prixMin.toFixed(2).replace('.',',')} €</span>` : ''}
-      </div>`;
+    const prixMin = p.prix?.length ? Math.min(...p.prix.map(x=>x.montant)) : null;
+    return `<div class="search-result-item" onclick="selectionnerProduit('${p.id}')">
+      <div><div class="result-nom">${p.nom}</div><div style="font-size:11px;color:var(--gris)">${p.marque||''}</div></div>
+      ${prixMin !== null ? `<span class="result-prix">${prixMin.toFixed(2).replace('.',',')} €</span>` : ''}
+    </div>`;
   }).join('');
 }
 
@@ -1198,13 +759,28 @@ function ouvrirModalProduit(produit) {
   document.getElementById('prod-marque').value = produit?.marque || '';
   document.getElementById('prod-sous-cat').value = produit?.sous_categorie || '';
   document.getElementById('prod-contenance').value = produit?.contenance || '';
+  document.getElementById('prod-qte-cond').value = produit?.qte_conditionnement || '';
   document.getElementById('prod-code-barres').value = produit?.code_barres || '';
   document.getElementById('prod-prix').value = '';
   document.getElementById('prod-promo').checked = false;
 
-  // Remplir selects
-  chargerCategories();
-  chargerMagasins();
+  // Reset photo
+  const zone = document.getElementById('photo-upload-zone');
+  zone.innerHTML = `<span style="font-size:24px">📷</span><span>Appuyer pour ajouter une photo</span><input type="file" id="photo-input" accept="image/*" onchange="previewPhoto(this)" />`;
+
+  remplirSelectCategories();
+  remplirSelectMagasins();
+
+  // Sélectionner catégorie si en édition
+  if (produit?.categorie_id) {
+    setTimeout(() => { document.getElementById('prod-categorie').value = produit.categorie_id; }, 100);
+  }
+  if (produit?.format) {
+    setTimeout(() => { document.getElementById('prod-format').value = produit.format; }, 100);
+  }
+  if (produit?.unite) {
+    setTimeout(() => { document.getElementById('prod-unite').value = produit.unite; }, 100);
+  }
 
   fermerModal('modal-panier');
   document.getElementById('modal-produit').classList.add('open');
@@ -1215,7 +791,6 @@ async function sauvegarderProduit() {
   const prix = parseFloat(document.getElementById('prod-prix').value);
   const magasinId = document.getElementById('prod-magasin').value;
   const categorieId = document.getElementById('prod-categorie').value;
-
   if (!nom) { afficherToast('Le nom est requis'); return; }
 
   const produitData = {
@@ -1223,14 +798,14 @@ async function sauvegarderProduit() {
     marque: document.getElementById('prod-marque').value.trim() || null,
     categorie_id: categorieId || null,
     sous_categorie: document.getElementById('prod-sous-cat').value.trim() || null,
-    unite: document.getElementById('prod-unite').value || null,
     format: document.getElementById('prod-format').value || null,
+    qte_conditionnement: document.getElementById('prod-qte-cond').value || null,
+    unite: document.getElementById('prod-unite').value || null,
     contenance: document.getElementById('prod-contenance').value || null,
     code_barres: document.getElementById('prod-code-barres').value.trim() || null,
   };
 
   let produitId = produitEnEdition?.id;
-
   if (produitEnEdition) {
     await db.from('produits').update(produitData).eq('id', produitEnEdition.id);
   } else {
@@ -1238,33 +813,31 @@ async function sauvegarderProduit() {
     produitId = data?.id;
   }
 
-  // Enregistrer le prix si renseigné
   if (prix > 0 && magasinId && produitId) {
     await db.from('prix').insert({
-      produit_id: produitId,
-      magasin_id: magasinId,
-      montant: prix,
-      est_promo: document.getElementById('prod-promo').checked,
+      produit_id: produitId, magasin_id: magasinId,
+      montant: prix, est_promo: document.getElementById('prod-promo').checked,
     });
-
-    // Ajouter directement au panier
-    panier.push({
-      produit_id: produitId,
-      nom: produitData.nom,
-      marque: produitData.marque,
-      format: produitData.format,
-      contenance: produitData.contenance,
-      unite: produitData.unite,
-      montant: prix,
-      est_promo: document.getElementById('prod-promo').checked,
-      magasin_nom: magasins.find(m => m.id === magasinId)?.nom || '',
-      quantite: 1
-    });
+    const existant = panier.find(i => i.produit_id === produitId);
+    if (existant) {
+      existant.montant = prix;
+    } else {
+      panier.push({
+        produit_id: produitId, nom: produitData.nom, marque: produitData.marque,
+        categorie_nom: categories.find(c=>c.id===categorieId)?.nom || '',
+        format: produitData.format, contenance: produitData.contenance,
+        unite: produitData.unite, montant: prix,
+        est_promo: document.getElementById('prod-promo').checked,
+        magasin_nom: magasins.find(m=>m.id===magasinId)?.nom || '',
+        quantite: 1
+      });
+    }
   }
 
   fermerModal('modal-produit');
   afficherToast(produitEnEdition ? 'Produit modifié ✓' : 'Produit ajouté ✓');
-  changerVue('panier');
+  if (vueActuelle === 'produits') renderProduits();
+  else changerVue('panier');
 }
 
 // ===== SCANNER =====
@@ -1273,47 +846,39 @@ function ouvrirScanner() {
   scannerInstance = new Html5Qrcode('qr-reader');
   scannerInstance.start(
     { facingMode: 'environment' },
-    { fps: 10, qrbox: 250 },
-    async (code) => {
-      arreterScanner();
-      await rechercherParCodeBarres(code);
-    },
+    { fps: 10, qrbox: { width: 250, height: 150 } },
+    async (code) => { arreterScanner(); await rechercherParCodeBarres(code); },
     () => {}
-  ).catch(() => { afficherToast('Caméra non disponible'); arreterScanner(); });
+  ).catch(err => { afficherToast('Caméra non disponible'); arreterScanner(); });
 }
 
 function arreterScanner() {
-  if (scannerInstance) {
-    scannerInstance.stop().catch(() => {});
-    scannerInstance = null;
-  }
+  if (scannerInstance) { scannerInstance.stop().catch(()=>{}); scannerInstance = null; }
   document.getElementById('qr-container').style.display = 'none';
 }
 
 async function rechercherParCodeBarres(code) {
-  document.getElementById('prod-code-barres').value = code;
   afficherToast('Code scanné : ' + code);
-
-  // Chercher dans notre BDD
-  const { data: local } = await db.from('produits').select('*').eq('code_barres', code).single();
-  if (local) {
-    await selectionnerProduit(local.id);
-    return;
-  }
-
-  // Chercher sur OpenFoodFacts
+  const { data: local } = await db.from('produits').select('*').eq('code_barres', code).maybeSingle();
+  if (local) { await selectionnerProduit(local.id); return; }
+  // OpenFoodFacts
   try {
     const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
     const json = await res.json();
     if (json.status === 1) {
       const p = json.product;
-      document.getElementById('prod-nom').value = p.product_name_fr || p.product_name || '';
-      document.getElementById('prod-marque').value = p.brands || '';
+      const fakeProduit = {
+        nom: p.product_name_fr || p.product_name || '',
+        marque: p.brands || '',
+        code_barres: code,
+      };
+      ouvrirModalProduit(fakeProduit);
       afficherToast('Produit trouvé sur OpenFoodFacts ✓');
+      return;
     }
   } catch(e) {}
-
-  ouvrirModalProduit();
+  document.getElementById('prod-code-barres').value = code;
+  ouvrirModalProduit(null);
 }
 
 // ===== PHOTO =====
@@ -1329,32 +894,20 @@ function previewPhoto(input) {
 }
 
 // ===== UTILS =====
-function fermerModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
-
+function fermerModal(id) { document.getElementById(id).classList.remove('open'); }
 function afficherToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
-
-// Fermer modal en cliquant l'overlay
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.remove('open');
-  });
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
 });
 
-// ===== LANCEMENT =====
 init();
 </script>
-
 <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
