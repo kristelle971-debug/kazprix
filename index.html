@@ -177,6 +177,18 @@
     .spinner { width: 30px; height: 30px; border: 3px solid var(--gris-clair); border-top-color: var(--vert); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* SELECTION PRIX MAGASIN */
+    .prix-choix-item { display: flex; align-items: center; justify-content: space-between; padding: 14px; border: 2px solid var(--gris-clair); border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer; transition: var(--transition); background: white; }
+    .prix-choix-item:active { border-color: var(--vert); background: var(--vert-pale); }
+    .prix-choix-item.selected { border-color: var(--vert); background: var(--vert-pale); }
+    .prix-choix-magasin { font-weight: 600; font-size: 14px; }
+    .prix-choix-ville { font-size: 11px; color: var(--gris); margin-top: 1px; }
+    .prix-choix-montant { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--vert); }
+    .prix-choix-montant.promo { color: var(--rouge); }
+    .prix-choix-date { font-size: 10px; color: var(--gris); margin-top: 2px; text-align: right; }
+    .prix-choix-min { background: var(--vert); color: white; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 6px; margin-top: 3px; display: inline-block; }
+    .prix-sans-magasin { padding: 14px; border: 2px dashed var(--gris-clair); border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer; text-align: center; color: var(--gris); font-size: 13px; }
+
     /* PRIX FORM INLINE */
     .prix-form-bloc { background: var(--vert-pale); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px; border: 1.5px solid var(--vert-accent); }
     .prix-form-bloc .form-group { margin-bottom: 10px; }
@@ -351,6 +363,18 @@
 
     <button class="btn-primary" onclick="sauvegarderProduit()">✓ Enregistrer</button>
     <button class="btn-secondary" onclick="fermerModal('modal-produit')">Annuler</button>
+  </div>
+</div>
+
+<!-- MODAL CHOIX PRIX / MAGASIN -->
+<div class="modal-overlay" id="modal-choix-prix">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="choix-prix-titre">Choisir le prix</div>
+    <p style="font-size:13px;color:var(--gris);margin-bottom:16px">Sélectionnez le magasin et le prix pour cet article dans votre panier</p>
+    <div id="choix-prix-liste"></div>
+    <div class="prix-sans-magasin" onclick="ajouterSansPrix()">+ Ajouter sans prix pour l'instant</div>
+    <button class="btn-secondary" onclick="fermerModal('modal-choix-prix')">Annuler</button>
   </div>
 </div>
 
@@ -788,9 +812,96 @@ async function rechercherProduit(query) {
   }).join('');
 }
 
+let produitEnSelection = null;
+
 async function selectionnerProduit(produitId) {
+  const { data: p } = await db.from('produits')
+    .select('*, categories(nom), prix(id, montant, est_promo, date_enregistrement, magasins(nom,ville))')
+    .eq('id', produitId).single();
+  if (!p) return;
+
+  // Pas de prix → ajouter directement sans prix
+  if (!p.prix?.length) {
+    fermerModal('modal-panier');
+    const existant = panier.find(i => i.produit_id === produitId);
+    if (existant) { existant.quantite++; afficherToast('Quantité mise à jour ✓'); }
+    else {
+      panier.push({ produit_id: produitId, nom: p.nom, marque: p.marque, categorie_nom: p.categories?.nom, format: p.format, contenance: p.contenance, unite: p.unite, montant: 0, est_promo: false, magasin_nom: '', quantite: 1 });
+      afficherToast('Ajouté au panier ✓');
+    }
+    changerVue('panier');
+    return;
+  }
+
+  // Un seul prix → ajouter directement
+  if (p.prix.length === 1) {
+    const px = p.prix[0];
+    fermerModal('modal-panier');
+    await ajouterAuPanierDepuisProduit(produitId, px.montant, px.magasins?.nom, px.est_promo);
+    changerVue('panier');
+    return;
+  }
+
+  // Plusieurs prix → afficher le choix
+  produitEnSelection = p;
   fermerModal('modal-panier');
-  await ajouterAuPanierDepuisProduit(produitId);
+  afficherChoixPrix(p);
+}
+
+function afficherChoixPrix(p) {
+  document.getElementById('choix-prix-titre').textContent = p.nom;
+  // Trier par montant croissant, dédupliquer par magasin (garder le plus récent)
+  const parMagasin = {};
+  p.prix.forEach(px => {
+    const mid = px.magasins?.nom + px.magasins?.ville;
+    if (!parMagasin[mid] || new Date(px.date_enregistrement) > new Date(parMagasin[mid].date_enregistrement)) {
+      parMagasin[mid] = px;
+    }
+  });
+  const prixTries = Object.values(parMagasin).sort((a,b) => a.montant - b.montant);
+  const prixMin = prixTries[0]?.montant;
+
+  const liste = document.getElementById('choix-prix-liste');
+  liste.innerHTML = prixTries.map((px, i) => {
+    const date = new Date(px.date_enregistrement).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'});
+    const estMin = px.montant === prixMin;
+    return `
+      <div class="prix-choix-item" onclick="confirmerChoixPrix(${i})">
+        <div>
+          <div class="prix-choix-magasin">🏪 ${px.magasins?.nom || '?'}</div>
+          <div class="prix-choix-ville">📍 ${px.magasins?.ville || ''}</div>
+          ${estMin ? '<span class="prix-choix-min">💚 Le moins cher</span>' : ''}
+        </div>
+        <div style="text-align:right">
+          <div class="prix-choix-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} €${px.est_promo?' 🏷️':''}</div>
+          <div class="prix-choix-date">${date}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Stocker les prix triés pour y accéder au clic
+  liste.dataset.prixJson = JSON.stringify(prixTries);
+  document.getElementById('modal-choix-prix').classList.add('open');
+}
+
+async function confirmerChoixPrix(index) {
+  const liste = document.getElementById('choix-prix-liste');
+  const prixTries = JSON.parse(liste.dataset.prixJson);
+  const px = prixTries[index];
+  fermerModal('modal-choix-prix');
+  await ajouterAuPanierDepuisProduit(produitEnSelection.id, px.montant, px.magasins?.nom, px.est_promo);
+  changerVue('panier');
+}
+
+async function ajouterSansPrix() {
+  fermerModal('modal-choix-prix');
+  if (!produitEnSelection) return;
+  const existant = panier.find(i => i.produit_id === produitEnSelection.id);
+  if (existant) { existant.quantite++; afficherToast('Quantité mise à jour ✓'); }
+  else {
+    panier.push({ produit_id: produitEnSelection.id, nom: produitEnSelection.nom, marque: produitEnSelection.marque, categorie_nom: produitEnSelection.categories?.nom, format: produitEnSelection.format, contenance: produitEnSelection.contenance, unite: produitEnSelection.unite, montant: 0, est_promo: false, magasin_nom: '', quantite: 1 });
+    afficherToast('Ajouté au panier ✓');
+  }
   changerVue('panier');
 }
 
