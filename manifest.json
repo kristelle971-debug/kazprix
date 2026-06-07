@@ -1,0 +1,22 @@
+{
+  "name": "KazPrix – Prix en Guadeloupe",
+  "short_name": "KazPrix",
+  "description": "Suivez et comparez les prix dans les supermarchés de Guadeloupe",
+  "start_url": "/kazprix/",
+  "display": "standalone",
+  "background_color": "#fafaf8",
+  "theme_color": "#1a472a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
