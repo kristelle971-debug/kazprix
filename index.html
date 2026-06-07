@@ -204,14 +204,17 @@
   </div>
   <div class="panier-totaux" id="panier-totaux" style="display:none">
     <div>
-      <div class="total-label">Total panier</div>
-      <div class="total-value" id="total-actuel">0,00 €</div>
-      <div id="approx-label" style="display:none"><span class="approx-badge">~ approximatif</span></div>
+      <div class="total-label">💚 Min possible</div>
+      <div class="total-value" id="total-min" style="color:var(--vert-accent);font-size:15px">0,00 €</div>
     </div>
-    <div style="text-align:center"></div>
-    <div class="total-min">
-      <div class="total-label">Prix min possible</div>
-      <div class="total-value" id="total-min">0,00 €</div>
+    <div style="text-align:center">
+      <div class="total-label">Mon panier</div>
+      <div class="total-value" id="total-actuel">0,00 €</div>
+      <div id="approx-label" style="display:none"><span class="approx-badge">~ approx.</span></div>
+    </div>
+    <div style="text-align:right">
+      <div class="total-label">📈 Max</div>
+      <div class="total-value" id="total-max" style="color:var(--gris);font-size:15px">0,00 €</div>
     </div>
   </div>
 </div>
@@ -495,10 +498,10 @@ function renderPanier() {
     items.forEach(item => { const k = item[key] || 'Non défini'; if (!groupes[k]) groupes[k] = []; groupes[k].push(item); });
     Object.entries(groupes).sort().forEach(([label, groupe]) => {
       html += `<div class="groupe-label">${label}</div>`;
-      groupe.forEach(item => { const idx = panier.findIndex(i => i.produit_id === item.produit_id); html += renderPanierItem(item, idx); });
+      groupe.forEach(item => { const idx = panier.findIndex(i => i.panier_key === item.panier_key); html += renderPanierItem(item, idx); });
     });
   } else {
-    items.forEach(item => { const idx = panier.findIndex(i => i.produit_id === item.produit_id); html += renderPanierItem(item, idx); });
+    items.forEach(item => { const idx = panier.findIndex(i => i.panier_key === item.panier_key); html += renderPanierItem(item, idx); });
   }
 
   main.innerHTML = html;
@@ -536,16 +539,35 @@ function modifierQty(index, delta) {
 function viderPanier() { if (confirm('Vider le panier ?')) { panier = []; renderPanier(); afficherToast('Panier vidé'); } }
 
 function mettreAJourTotaux() {
+  if (panier.length === 0) { document.getElementById('panier-totaux').style.display = 'none'; return; }
+
   const avecPrix = panier.filter(i => i.montant && i.montant > 0);
   const sansPrix = panier.filter(i => !i.montant || i.montant === 0);
-  const total = avecPrix.reduce((s,i) => s + i.montant * i.quantite, 0);
   const estApprox = sansPrix.length > 0 && avecPrix.length > 0;
-  const toutSansPrix = avecPrix.length === 0;
 
-  document.getElementById('total-actuel').textContent = toutSansPrix ? '0,00 €' : total.toFixed(2).replace('.',',') + ' €';
-  document.getElementById('total-min').textContent = toutSansPrix ? '0,00 €' : total.toFixed(2).replace('.',',') + ' €';
+  // Total panier = ce que l'utilisateur a choisi
+  const totalPanier = avecPrix.reduce((s,i) => s + i.montant * i.quantite, 0);
+
+  // Total min = pour chaque produit unique, prendre le prix le moins cher tous magasins confondus
+  // On groupe par produit_id et on prend le min des montants
+  const parProduit = {};
+  panier.forEach(i => {
+    if (!parProduit[i.produit_id]) parProduit[i.produit_id] = { qteTotale: 0, prixDispo: [...(i.tous_prix||[i.montant].filter(Boolean))] };
+    parProduit[i.produit_id].qteTotale += i.quantite;
+  });
+  let totalMin = 0, totalMax = 0;
+  Object.values(parProduit).forEach(p => {
+    if (p.prixDispo.length) {
+      totalMin += Math.min(...p.prixDispo) * p.qteTotale;
+      totalMax += Math.max(...p.prixDispo) * p.qteTotale;
+    }
+  });
+
+  document.getElementById('total-actuel').textContent = (avecPrix.length === 0 ? 0 : totalPanier).toFixed(2).replace('.',',') + ' €';
+  document.getElementById('total-min').textContent = totalMin > 0 ? totalMin.toFixed(2).replace('.',',') + ' €' : '–';
+  document.getElementById('total-max').textContent = totalMax > 0 ? totalMax.toFixed(2).replace('.',',') + ' €' : '–';
   document.getElementById('approx-label').style.display = estApprox ? 'block' : 'none';
-  document.getElementById('panier-totaux').style.display = panier.length > 0 ? 'grid' : 'none';
+  document.getElementById('panier-totaux').style.display = 'grid';
 }
 
 // ===== PRODUITS =====
@@ -591,27 +613,30 @@ async function ouvrirFicheProduit(produitId) {
 }
 
 async function ajouterAuPanierDepuisProduit(produitId, montant, magasinNom, estPromo) {
-  const existant = panier.find(i => i.produit_id === produitId);
+  // Chercher une ligne existante avec MÊME produit ET MÊME magasin
+  const existant = panier.find(i => i.produit_id === produitId && (i.magasin_nom||'') === (magasinNom||''));
   if (existant) {
     existant.quantite++;
-    if (montant) { existant.montant = montant; existant.magasin_nom = magasinNom||existant.magasin_nom; existant.est_promo = estPromo||false; }
     afficherToast('Quantité mise à jour ✓');
     if (vueActuelle === 'panier') renderPanier();
     return;
   }
+  // Nouvelle ligne (même produit, magasin différent = ligne séparée)
   const { data: p } = await db.from('produits')
     .select('*, categories(nom), prix(montant, est_promo, magasins(nom))')
     .eq('id', produitId).single();
   if (!p) return;
-  const px = p.prix?.length ? p.prix.reduce((min,x) => x.montant < min.montant ? x : min, p.prix[0]) : null;
   panier.push({
+    panier_key: produitId + '_' + (magasinNom||''),
     produit_id: produitId, nom: p.nom, marque: p.marque,
     categorie_nom: p.categories?.nom,
     format: p.format, contenance: p.contenance, unite: p.unite,
-    montant: montant || px?.montant || 0,
-    est_promo: estPromo || px?.est_promo || false,
-    magasin_nom: magasinNom || px?.magasins?.nom || '',
-    quantite: 1
+    montant: montant || 0,
+    est_promo: estPromo || false,
+    magasin_nom: magasinNom || '',
+    quantite: 1,
+    // Stocker tous les prix disponibles pour ce produit (min/max)
+    tous_prix: p.prix?.map(px => px.montant) || []
   });
   afficherToast('Ajouté au panier ✓');
   if (vueActuelle === 'panier') renderPanier();
@@ -925,10 +950,18 @@ async function confirmerChoixPrix(index) {
 async function ajouterSansPrix() {
   fermerModal('modal-choix-prix');
   if (!produitEnSelection) return;
-  const existant = panier.find(i => i.produit_id === produitEnSelection.id);
+  const key = produitEnSelection.id + '_';
+  const existant = panier.find(i => i.panier_key === key);
   if (existant) { existant.quantite++; afficherToast('Quantité mise à jour ✓'); }
   else {
-    panier.push({ produit_id: produitEnSelection.id, nom: produitEnSelection.nom, marque: produitEnSelection.marque, categorie_nom: produitEnSelection.categories?.nom, format: produitEnSelection.format, contenance: produitEnSelection.contenance, unite: produitEnSelection.unite, montant: 0, est_promo: false, magasin_nom: '', quantite: 1 });
+    panier.push({
+      panier_key: key,
+      produit_id: produitEnSelection.id, nom: produitEnSelection.nom, marque: produitEnSelection.marque,
+      categorie_nom: produitEnSelection.categories?.nom, format: produitEnSelection.format,
+      contenance: produitEnSelection.contenance, unite: produitEnSelection.unite,
+      montant: 0, est_promo: false, magasin_nom: '', quantite: 1,
+      tous_prix: produitEnSelection.prix?.map(x=>x.montant) || []
+    });
     afficherToast('Ajouté au panier ✓');
   }
   changerVue('panier');
