@@ -848,23 +848,54 @@ async function selectionnerProduit(produitId) {
   afficherChoixPrix(p);
 }
 
+async function selectionnerPrixPourPanier(produitId) {
+  const { data: p } = await db.from('produits')
+    .select('*, categories(nom), prix(id, montant, est_promo, date_enregistrement, magasins(nom,ville))')
+    .eq('id', produitId).single();
+  if (!p) return;
+  produitEnSelection = p;
+  fermerModal('modal-produit');
+  if (!p.prix?.length) {
+    await ajouterAuPanierDepuisProduit(produitId);
+    changerVue('panier');
+  } else if (p.prix.length === 1) {
+    const px = p.prix[0];
+    await ajouterAuPanierDepuisProduit(produitId, px.montant, px.magasins?.nom, px.est_promo);
+    changerVue('panier');
+  } else {
+    afficherChoixPrix(p);
+  }
+}
+
+// Tableau global pour stocker les prix du choix (évite JSON.stringify des objets complexes)
+let prixChoixActuels = [];
+
 function afficherChoixPrix(p) {
   document.getElementById('choix-prix-titre').textContent = p.nom;
-  // Trier par montant croissant, dédupliquer par magasin (garder le plus récent)
+
+  // Dédupliquer par magasin : garder le prix le plus récent par magasin
   const parMagasin = {};
   p.prix.forEach(px => {
-    const mid = px.magasins?.nom + px.magasins?.ville;
+    const mid = (px.magasins?.nom||'') + (px.magasins?.ville||'');
     if (!parMagasin[mid] || new Date(px.date_enregistrement) > new Date(parMagasin[mid].date_enregistrement)) {
       parMagasin[mid] = px;
     }
   });
-  const prixTries = Object.values(parMagasin).sort((a,b) => a.montant - b.montant);
-  const prixMin = prixTries[0]?.montant;
+
+  // Trier par montant croissant
+  prixChoixActuels = Object.values(parMagasin).sort((a,b) => a.montant - b.montant);
+  const prixMin = prixChoixActuels[0]?.montant;
+  const prixMax = prixChoixActuels[prixChoixActuels.length-1]?.montant;
 
   const liste = document.getElementById('choix-prix-liste');
-  liste.innerHTML = prixTries.map((px, i) => {
+  liste.innerHTML = prixChoixActuels.map((px, i) => {
     const date = new Date(px.date_enregistrement).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'});
     const estMin = px.montant === prixMin;
+    const estMax = px.montant === prixMax && prixChoixActuels.length > 1;
+    // Différence par rapport au min
+    const diff = prixChoixActuels.length > 1 && !estMin
+      ? '+' + ((px.montant - prixMin) / prixMin * 100).toFixed(0) + '%'
+      : null;
     return `
       <div class="prix-choix-item" onclick="confirmerChoixPrix(${i})">
         <div>
@@ -875,19 +906,17 @@ function afficherChoixPrix(p) {
         <div style="text-align:right">
           <div class="prix-choix-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} €${px.est_promo?' 🏷️':''}</div>
           <div class="prix-choix-date">${date}</div>
+          ${diff ? `<div style="font-size:11px;color:var(--rouge);font-weight:600">${diff} vs min 📈</div>` : ''}
         </div>
       </div>`;
   }).join('');
 
-  // Stocker les prix triés pour y accéder au clic
-  liste.dataset.prixJson = JSON.stringify(prixTries);
   document.getElementById('modal-choix-prix').classList.add('open');
 }
 
 async function confirmerChoixPrix(index) {
-  const liste = document.getElementById('choix-prix-liste');
-  const prixTries = JSON.parse(liste.dataset.prixJson);
-  const px = prixTries[index];
+  const px = prixChoixActuels[index];
+  if (!px) return;
   fermerModal('modal-choix-prix');
   await ajouterAuPanierDepuisProduit(produitEnSelection.id, px.montant, px.magasins?.nom, px.est_promo);
   changerVue('panier');
@@ -939,29 +968,46 @@ function ouvrirModalProduit(produit) {
   if (produit?.format) setTimeout(() => { document.getElementById('prod-format').value = produit.format; }, 100);
   if (produit?.unite) setTimeout(() => { document.getElementById('prod-unite').value = produit.unite; }, 100);
 
-  // Historique prix
+  // Historique prix avec variations
   const histBloc = document.getElementById('historique-prix-bloc');
   if (produit?.prix?.length) {
     const prixMin = Math.min(...produit.prix.map(x=>x.montant));
+    const prixMax = Math.max(...produit.prix.map(x=>x.montant));
+    // Prix triés par date desc pour calcul variation
+    const prixTries = [...produit.prix].sort((a,b) => new Date(b.date_enregistrement) - new Date(a.date_enregistrement));
+
     histBloc.style.display = 'block';
     histBloc.innerHTML = `
       <div class="historique-bloc">
         <div class="historique-titre">📊 Historique des prix (${produit.prix.length})</div>
-        ${produit.prix.map(px => {
+        ${prixTries.map((px, i) => {
           const date = new Date(px.date_enregistrement).toLocaleDateString('fr-FR', {day:'2-digit',month:'short',year:'numeric'});
           const estMin = px.montant === prixMin;
+          const estMax = px.montant === prixMax && produit.prix.length > 1;
+          // Variation par rapport au prix suivant (plus ancien)
+          let variationHtml = '';
+          if (i < prixTries.length - 1) {
+            const pxPrecedent = prixTries[i + 1];
+            const diff = px.montant - pxPrecedent.montant;
+            const pct = ((diff / pxPrecedent.montant) * 100).toFixed(0);
+            if (diff > 0) variationHtml = `<span style="color:var(--rouge);font-size:10px;font-weight:700">📈 +${pct}%</span>`;
+            else if (diff < 0) variationHtml = `<span style="color:var(--vert-accent);font-size:10px;font-weight:700">📉 ${pct}%</span>`;
+            else variationHtml = `<span style="color:var(--gris);font-size:10px">= stable</span>`;
+          }
           return `<div class="prix-ligne">
             <div class="prix-ligne-gauche">
               <div class="prix-ligne-magasin">${px.magasins?.nom||'?'} – ${px.magasins?.ville||''}</div>
-              <div class="prix-ligne-date">${date}</div>
+              <div class="prix-ligne-date">${date} ${variationHtml}</div>
             </div>
-            <div>
-              <span class="prix-ligne-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} €${px.est_promo?' 🏷️':''}</span>
-              ${estMin ? '<span class="prix-min-tag">MIN</span>' : ''}
+            <div style="text-align:right">
+              <div><span class="prix-ligne-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} €</span>${px.est_promo?' 🏷️':''}</div>
+              ${estMin ? '<span class="prix-min-tag">💚 MIN</span>' : ''}
+              ${estMax ? '<span style="background:#ffe5e7;color:var(--rouge);font-size:9px;font-weight:700;padding:2px 5px;border-radius:6px">📈 MAX</span>' : ''}
             </div>
           </div>`;
         }).join('')}
-      </div>`;
+      </div>
+      <button class="btn-outline-vert" style="margin-top:8px" onclick="selectionnerPrixPourPanier('${produit.id}')">🛒 Choisir le prix pour le panier</button>`;
   } else {
     histBloc.style.display = 'none';
   }
