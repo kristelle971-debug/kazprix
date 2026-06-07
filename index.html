@@ -29,19 +29,19 @@
     .logo span { color: var(--jaune); }
     .panier-totaux { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; background: rgba(255,255,255,0.12); border-radius: var(--radius-sm); padding: 10px 14px; }
     .total-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
-    .total-value { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
+    .total-value { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
     .total-min { text-align: right; }
-    .total-min .total-value { color: var(--jaune); font-size: 16px; }
-    .economie-badge { background: var(--jaune); color: var(--vert); font-weight: 700; font-size: 11px; border-radius: 20px; padding: 3px 8px; }
+    .total-min .total-value { color: var(--jaune); font-size: 15px; }
+    .approx-badge { background: rgba(244,196,48,0.25); color: var(--jaune); font-size: 10px; font-weight: 600; border-radius: 10px; padding: 2px 7px; margin-top: 2px; display: inline-block; }
 
     /* MAIN */
     .main { padding: 16px; padding-bottom: 100px; }
 
-    /* PANIER TOOLBAR */
+    /* TOOLBAR PANIER */
     .panier-toolbar { margin-bottom: 14px; }
-    .tri-row { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; padding-bottom: 2px; }
+    .tri-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
     .tri-row::-webkit-scrollbar { display: none; }
-    .btn-tri { padding: 7px 14px; border: 1.5px solid var(--gris-clair); border-radius: 20px; background: white; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--gris); white-space: nowrap; transition: var(--transition); flex-shrink: 0; }
+    .btn-tri { padding: 7px 14px; border: 1.5px solid var(--gris-clair); border-radius: 20px; background: white; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--gris); white-space: nowrap; flex-shrink: 0; }
     .btn-tri.active { background: var(--vert); color: white; border-color: var(--vert); }
     .btn-vider { padding: 7px 14px; border: 1.5px solid var(--rouge); border-radius: 20px; background: white; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--rouge); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 
@@ -58,6 +58,7 @@
     .item-nom { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .item-meta { font-size: 11px; color: var(--gris); margin-top: 1px; }
     .item-prix { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--vert); margin-top: 3px; }
+    .item-prix.sans-prix { color: var(--gris); font-size: 12px; font-family: 'DM Sans', sans-serif; font-weight: 400; font-style: italic; }
     .promo-badge { background: var(--rouge); color: white; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 8px; margin-left: 4px; }
     .item-qty { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .qty-btn { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--gris-clair); background: white; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--vert); font-weight: 700; }
@@ -81,7 +82,9 @@
     .cat-count { font-size: 10px; color: var(--gris); background: var(--gris-clair); padding: 2px 8px; border-radius: 10px; }
 
     /* MAGASINS */
-    .magasin-card { background: var(--carte); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; box-shadow: var(--ombre); }
+    .magasin-card { background: var(--carte); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; box-shadow: var(--ombre); cursor: pointer; transition: var(--transition); }
+    .magasin-card:active { transform: scale(0.98); }
+    .magasin-header { display: flex; justify-content: space-between; align-items: flex-start; }
     .magasin-nom { font-weight: 600; font-size: 15px; }
     .magasin-ville { font-size: 12px; color: var(--gris); margin-top: 2px; }
     .magasin-stats { font-size: 12px; color: var(--vert-accent); margin-top: 6px; font-weight: 500; }
@@ -98,12 +101,17 @@
     /* BACK */
     .back-btn { display: flex; align-items: center; gap: 8px; color: var(--vert); font-weight: 600; font-size: 14px; cursor: pointer; margin-bottom: 16px; }
 
-    /* PRIX HISTORIQUE */
-    .prix-historique { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--gris-clair); }
-    .prix-ligne { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; }
-    .prix-ligne-magasin { color: var(--gris); }
-    .prix-ligne-montant { font-weight: 600; color: var(--vert); }
+    /* HISTORIQUE PRIX */
+    .historique-bloc { margin-top: 10px; background: var(--gris-clair); border-radius: var(--radius-sm); padding: 10px 12px; }
+    .historique-titre { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gris); margin-bottom: 8px; }
+    .prix-ligne { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 12px; }
+    .prix-ligne:last-child { border-bottom: none; }
+    .prix-ligne-gauche { flex: 1; }
+    .prix-ligne-magasin { font-weight: 600; color: var(--texte); }
+    .prix-ligne-date { color: var(--gris); font-size: 11px; }
+    .prix-ligne-montant { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--vert); }
     .prix-ligne-montant.promo { color: var(--rouge); }
+    .prix-min-tag { background: var(--vert-pale); color: var(--vert); font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 6px; margin-left: 4px; }
 
     /* MODAL */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
@@ -123,6 +131,7 @@
     .form-checkbox input { width: 18px; height: 18px; accent-color: var(--rouge); flex-shrink: 0; }
     .section-form { border-top: 1px solid var(--gris-clair); padding-top: 14px; margin-top: 4px; margin-bottom: 13px; }
     .section-form-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 12px; }
+    .form-optionnel { font-size: 10px; color: var(--gris); font-style: italic; margin-left: 4px; text-transform: none; letter-spacing: 0; }
 
     /* SEARCH */
     .search-bar { position: relative; margin-bottom: 12px; }
@@ -147,10 +156,11 @@
     .photo-upload img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     .photo-upload input { display: none; }
 
-    /* BTN */
+    /* BTNS */
     .btn-primary { width: 100%; padding: 14px; background: var(--vert); color: white; border: none; border-radius: var(--radius); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 6px; }
     .btn-primary:active { opacity: 0.9; }
     .btn-secondary { width: 100%; padding: 13px; background: white; color: var(--gris); border: 1.5px solid var(--gris-clair); border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 15px; cursor: pointer; margin-top: 6px; }
+    .btn-outline-vert { width: 100%; padding: 11px; background: var(--vert-pale); color: var(--vert); border: 1.5px solid var(--vert-accent); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; }
 
     /* BOTTOM NAV */
     .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: white; border-top: 1px solid var(--gris-clair); display: grid; grid-template-columns: repeat(4, 1fr); z-index: 100; }
@@ -166,6 +176,11 @@
     .loading { text-align: center; padding: 50px 20px; color: var(--gris); }
     .spinner { width: 30px; height: 30px; border: 3px solid var(--gris-clair); border-top-color: var(--vert); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* PRIX FORM INLINE */
+    .prix-form-bloc { background: var(--vert-pale); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px; border: 1.5px solid var(--vert-accent); }
+    .prix-form-bloc .form-group { margin-bottom: 10px; }
+    .prix-form-bloc .form-group:last-child { margin-bottom: 0; }
   </style>
 </head>
 <body>
@@ -179,10 +194,9 @@
     <div>
       <div class="total-label">Total panier</div>
       <div class="total-value" id="total-actuel">0,00 €</div>
+      <div id="approx-label" style="display:none"><span class="approx-badge">~ approximatif</span></div>
     </div>
-    <div style="text-align:center">
-      <div class="economie-badge" id="economie-badge" style="display:none">économie</div>
-    </div>
+    <div style="text-align:center"></div>
     <div class="total-min">
       <div class="total-label">Prix min possible</div>
       <div class="total-value" id="total-min">0,00 €</div>
@@ -215,11 +229,11 @@
 
 <button class="fab" onclick="ouvrirModalAjouter()" id="fab-btn">+</button>
 
-<!-- MODAL AJOUTER AU PANIER -->
+<!-- MODAL RECHERCHE / AJOUT PANIER -->
 <div class="modal-overlay" id="modal-panier">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Ajouter un article</div>
+    <div class="modal-title">Ajouter au panier</div>
     <div class="search-bar">
       <input type="text" class="search-input" id="search-produit" placeholder="Rechercher un produit..." oninput="rechercherProduit(this.value)" autocomplete="off" />
       <span class="search-icon">🔍</span>
@@ -261,7 +275,7 @@
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Catégorie *</label>
+        <label class="form-label">Catégorie</label>
         <select class="form-select" id="prod-categorie"><option value="">Choisir...</option></select>
       </div>
       <div class="form-group">
@@ -270,45 +284,30 @@
       </div>
     </div>
 
-    <!-- FORMAT EN PREMIER -->
     <div class="form-group">
       <label class="form-label">Format / Conditionnement</label>
       <select class="form-select" id="prod-format">
         <option value="">Choisir...</option>
-        <option value="sachet">Sachet</option>
-        <option value="flacon">Flacon</option>
-        <option value="bocal">Bocal</option>
-        <option value="pack">Pack</option>
-        <option value="boîte">Boîte</option>
-        <option value="paquet">Paquet</option>
-        <option value="bouteille">Bouteille</option>
-        <option value="pot">Pot</option>
-        <option value="brique">Brique</option>
-        <option value="tube">Tube</option>
-        <option value="barquette">Barquette</option>
+        <option value="sachet">Sachet</option><option value="flacon">Flacon</option>
+        <option value="bocal">Bocal</option><option value="pack">Pack</option>
+        <option value="boîte">Boîte</option><option value="paquet">Paquet</option>
+        <option value="bouteille">Bouteille</option><option value="pot">Pot</option>
+        <option value="brique">Brique</option><option value="tube">Tube</option>
+        <option value="barquette">Barquette</option><option value="filet">Filet</option>
         <option value="pièce">Pièce unique</option>
-        <option value="filet">Filet</option>
-        <option value="plateau">Plateau</option>
       </select>
     </div>
-
-    <!-- QUANTITE CONDITIONNEMENT -->
     <div class="form-group">
-      <label class="form-label">Quantité dans le conditionnement</label>
-      <input type="number" class="form-input" id="prod-qte-cond" placeholder="Ex: 6 (pour un pack de 6)" min="1" />
+      <label class="form-label">Quantité dans le conditionnement <span class="form-optionnel">(ex: 6 pour un pack de 6)</span></label>
+      <input type="number" class="form-input" id="prod-qte-cond" placeholder="Ex: 6" min="1" />
     </div>
-
-    <!-- UNITE + CONTENANCE -->
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Unité</label>
         <select class="form-select" id="prod-unite">
-          <option value="pièce">Pièce</option>
-          <option value="g">Grammes (g)</option>
-          <option value="kg">Kilogrammes (kg)</option>
-          <option value="ml">Millilitres (ml)</option>
-          <option value="L">Litres (L)</option>
-          <option value="cl">Centilitres (cl)</option>
+          <option value="pièce">Pièce</option><option value="g">Grammes (g)</option>
+          <option value="kg">kg</option><option value="ml">ml</option>
+          <option value="L">Litres (L)</option><option value="cl">cl</option>
         </select>
       </div>
       <div class="form-group">
@@ -316,27 +315,37 @@
         <input type="number" class="form-input" id="prod-contenance" placeholder="Ex: 500" />
       </div>
     </div>
-
     <div class="form-group">
       <label class="form-label">Code-barres</label>
       <input type="text" class="form-input" id="prod-code-barres" placeholder="Ex: 3256540001234" />
     </div>
 
+    <!-- HISTORIQUE PRIX (affiché en mode édition) -->
+    <div id="historique-prix-bloc" style="display:none"></div>
+
+    <!-- AJOUTER UN PRIX -->
     <div class="section-form">
-      <div class="section-form-title">💰 Prix</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Prix (€) *</label>
-          <input type="number" step="0.01" class="form-input" id="prod-prix" placeholder="0,00" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Magasin *</label>
-          <select class="form-select" id="prod-magasin"><option value="">Choisir...</option></select>
-        </div>
+      <div class="section-form-title">💰 Enregistrer un prix <span class="form-optionnel" style="font-size:12px">(optionnel)</span></div>
+      <div id="prix-form-toggle">
+        <button class="btn-outline-vert" onclick="afficherFormPrix()">+ Ajouter un prix</button>
       </div>
-      <div class="form-checkbox">
-        <input type="checkbox" id="prod-promo" />
-        <label for="prod-promo">🏷️ Prix en promotion</label>
+      <div id="prix-form-inline" style="display:none">
+        <div class="prix-form-bloc">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Prix (€)</label>
+              <input type="number" step="0.01" class="form-input" id="prod-prix" placeholder="0,00" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Magasin</label>
+              <select class="form-select" id="prod-magasin"><option value="">Choisir...</option></select>
+            </div>
+          </div>
+          <div class="form-checkbox">
+            <input type="checkbox" id="prod-promo" />
+            <label for="prod-promo">🏷️ Prix en promotion</label>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -379,6 +388,7 @@ let produitEnEdition = null;
 let magasinEnEdition = null;
 let scannerInstance = null;
 let triPanier = 'nom';
+let prixFormVisible = false;
 
 const ICONES = {
   'Alimentation':'🍽️','Boissons':'🥤','Produits laitiers':'🥛','Surgelés':'🧊',
@@ -397,20 +407,19 @@ async function chargerCategories() {
   categories = data || [];
   remplirSelectCategories();
 }
-
 function remplirSelectCategories() {
   const sel = document.getElementById('prod-categorie');
   if (!sel) return;
+  const val = sel.value;
   sel.innerHTML = '<option value="">Choisir...</option>';
   categories.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nom}</option>`);
+  if (val) sel.value = val;
 }
-
 async function chargerMagasins() {
   const { data } = await db.from('magasins').select('*').order('nom');
   magasins = data || [];
   remplirSelectMagasins();
 }
-
 function remplirSelectMagasins() {
   const sel = document.getElementById('prod-magasin');
   if (!sel) return;
@@ -423,10 +432,7 @@ function changerVue(vue) {
   vueActuelle = vue;
   document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
   document.getElementById('nav-' + vue)?.classList.add('active');
-  const fab = document.getElementById('fab-btn');
-  const totaux = document.getElementById('panier-totaux');
-  fab.style.display = vue === 'panier' ? 'flex' : 'none';
-  totaux.style.display = (vue === 'panier' && panier.length > 0) ? 'grid' : 'none';
+  document.getElementById('fab-btn').style.display = vue === 'panier' ? 'flex' : 'none';
   if (vue === 'panier') renderPanier();
   else if (vue === 'produits') renderProduits();
   else if (vue === 'magasins') renderMagasins();
@@ -437,99 +443,85 @@ function changerVue(vue) {
 function renderPanier() {
   const main = document.getElementById('main-content');
   const totaux = document.getElementById('panier-totaux');
+
   if (panier.length === 0) {
     totaux.style.display = 'none';
-    main.innerHTML = `<div class="panier-vide"><div class="icon">🛒</div><p>Votre panier est vide</p><p style="font-size:13px">Appuyez sur + pour ajouter des articles</p></div>`;
+    main.innerHTML = `<div class="panier-vide"><div class="icon">🛒</div><p style="font-size:16px;font-weight:600;margin-bottom:8px">Votre panier est vide</p><p style="font-size:13px">Appuyez sur + pour ajouter des articles</p></div>`;
     return;
   }
-  totaux.style.display = 'grid';
 
-  // Tri
+  totaux.style.display = 'grid';
+  mettreAJourTotaux();
+
   let items = [...panier];
   if (triPanier === 'nom') items.sort((a,b) => a.nom.localeCompare(b.nom));
-  else if (triPanier === 'magasin') items.sort((a,b) => (a.magasin_nom||'').localeCompare(b.magasin_nom||''));
-  else if (triPanier === 'categorie') items.sort((a,b) => (a.categorie_nom||'').localeCompare(b.categorie_nom||''));
+  else if (triPanier === 'magasin') items.sort((a,b) => (a.magasin_nom||'zzz').localeCompare(b.magasin_nom||'zzz'));
+  else if (triPanier === 'categorie') items.sort((a,b) => (a.categorie_nom||'zzz').localeCompare(b.categorie_nom||'zzz'));
 
-  let html = `
-    <div class="panier-toolbar">
-      <div class="tri-row">
-        <button class="btn-tri ${triPanier==='nom'?'active':''}" onclick="setTri('nom')">Nom</button>
-        <button class="btn-tri ${triPanier==='magasin'?'active':''}" onclick="setTri('magasin')">Magasin</button>
-        <button class="btn-tri ${triPanier==='categorie'?'active':''}" onclick="setTri('categorie')">Catégorie</button>
-        <button class="btn-vider" onclick="viderPanier()">🗑 Vider</button>
-      </div>
-    </div>`;
+  let html = `<div class="panier-toolbar"><div class="tri-row">
+    <button class="btn-tri ${triPanier==='nom'?'active':''}" onclick="setTri('nom')">Nom</button>
+    <button class="btn-tri ${triPanier==='magasin'?'active':''}" onclick="setTri('magasin')">Magasin</button>
+    <button class="btn-tri ${triPanier==='categorie'?'active':''}" onclick="setTri('categorie')">Catégorie</button>
+    <button class="btn-vider" onclick="viderPanier()">🗑 Vider</button>
+  </div></div>`;
 
-  // Grouper si tri magasin ou catégorie
-  if (triPanier === 'magasin' || triPanier === 'categorie') {
+  if (triPanier !== 'nom') {
     const key = triPanier === 'magasin' ? 'magasin_nom' : 'categorie_nom';
     const groupes = {};
-    items.forEach(item => {
-      const k = item[key] || 'Autre';
-      if (!groupes[k]) groupes[k] = [];
-      groupes[k].push(item);
-    });
-    Object.entries(groupes).forEach(([label, groupe]) => {
+    items.forEach(item => { const k = item[key] || 'Non défini'; if (!groupes[k]) groupes[k] = []; groupes[k].push(item); });
+    Object.entries(groupes).sort().forEach(([label, groupe]) => {
       html += `<div class="groupe-label">${label}</div>`;
-      groupe.forEach(item => {
-        const idx = panier.findIndex(i => i.produit_id === item.produit_id);
-        html += renderPanierItem(item, idx);
-      });
+      groupe.forEach(item => { const idx = panier.findIndex(i => i.produit_id === item.produit_id); html += renderPanierItem(item, idx); });
     });
   } else {
-    items.forEach(item => {
-      const idx = panier.findIndex(i => i.produit_id === item.produit_id);
-      html += renderPanierItem(item, idx);
-    });
+    items.forEach(item => { const idx = panier.findIndex(i => i.produit_id === item.produit_id); html += renderPanierItem(item, idx); });
   }
 
   main.innerHTML = html;
-  mettreAJourTotaux();
 }
 
 function renderPanierItem(item, idx) {
   const icone = ICONES[item.categorie_nom] || '📦';
-  const photoHtml = item.photo_url
-    ? `<img src="${item.photo_url}" />`
-    : icone;
+  const aPrix = item.montant && item.montant > 0;
+  const prixHtml = aPrix
+    ? `<span class="item-prix">${((item.montant)*item.quantite).toFixed(2).replace('.',',')} €${item.est_promo ? '<span class="promo-badge">PROMO</span>' : ''}</span>`
+    : `<span class="item-prix sans-prix">Prix non renseigné – appuyer pour ajouter</span>`;
+  const metaArr = [item.magasin_nom, item.format, item.contenance ? item.contenance+(item.unite||'') : ''].filter(Boolean);
   return `
     <div class="panier-item" onclick="ouvrirFicheProduit('${item.produit_id}')">
-      <div class="item-photo">${photoHtml}</div>
+      <div class="item-photo">${icone}</div>
       <div class="item-info">
-        <div class="item-nom">${item.nom}${item.marque ? ' <span style="font-weight:400;color:var(--gris);font-size:12px">'+item.marque+'</span>' : ''}</div>
-        <div class="item-meta">${item.magasin_nom || ''} · ${item.format||''} ${item.contenance?item.contenance+' ':''} ${item.unite||''}</div>
-        <div style="margin-top:3px">
-          <span class="item-prix">${((item.montant||0)*item.quantite).toFixed(2).replace('.',',')} €</span>
-          ${item.est_promo ? '<span class="promo-badge">PROMO</span>' : ''}
-        </div>
+        <div class="item-nom">${item.nom}${item.marque?` <span style="font-weight:400;color:var(--gris);font-size:12px">${item.marque}</span>`:''}</div>
+        <div class="item-meta">${metaArr.join(' · ')}</div>
+        <div style="margin-top:3px">${prixHtml}</div>
       </div>
       <div class="item-qty" onclick="event.stopPropagation()">
-        <button class="qty-btn" onclick="modifierQty(${idx}, -1)">−</button>
+        <button class="qty-btn" onclick="modifierQty(${idx},-1)">−</button>
         <span class="qty-num">${item.quantite}</span>
-        <button class="qty-btn" onclick="modifierQty(${idx}, 1)">+</button>
+        <button class="qty-btn" onclick="modifierQty(${idx},1)">+</button>
       </div>
     </div>`;
 }
 
-function setTri(tri) {
-  triPanier = tri;
-  renderPanier();
-}
-
+function setTri(tri) { triPanier = tri; renderPanier(); }
 function modifierQty(index, delta) {
   panier[index].quantite += delta;
   if (panier[index].quantite <= 0) panier.splice(index, 1);
   renderPanier();
 }
-
-function viderPanier() {
-  if (confirm('Vider le panier ?')) { panier = []; renderPanier(); afficherToast('Panier vidé'); }
-}
+function viderPanier() { if (confirm('Vider le panier ?')) { panier = []; renderPanier(); afficherToast('Panier vidé'); } }
 
 function mettreAJourTotaux() {
-  const total = panier.reduce((s, i) => s + (i.montant||0) * i.quantite, 0);
-  document.getElementById('total-actuel').textContent = total.toFixed(2).replace('.',',') + ' €';
-  document.getElementById('total-min').textContent = total.toFixed(2).replace('.',',') + ' €';
+  const avecPrix = panier.filter(i => i.montant && i.montant > 0);
+  const sansPrix = panier.filter(i => !i.montant || i.montant === 0);
+  const total = avecPrix.reduce((s,i) => s + i.montant * i.quantite, 0);
+  const estApprox = sansPrix.length > 0 && avecPrix.length > 0;
+  const toutSansPrix = avecPrix.length === 0;
+
+  document.getElementById('total-actuel').textContent = toutSansPrix ? '0,00 €' : total.toFixed(2).replace('.',',') + ' €';
+  document.getElementById('total-min').textContent = toutSansPrix ? '0,00 €' : total.toFixed(2).replace('.',',') + ' €';
+  document.getElementById('approx-label').style.display = estApprox ? 'block' : 'none';
+  document.getElementById('panier-totaux').style.display = panier.length > 0 ? 'grid' : 'none';
 }
 
 // ===== PRODUITS =====
@@ -537,7 +529,7 @@ async function renderProduits() {
   const main = document.getElementById('main-content');
   main.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
   const { data: produits } = await db.from('produits')
-    .select('*, categories(nom), prix(montant, est_promo, magasins(nom,ville))')
+    .select('*, categories(nom), prix(montant, est_promo, date_enregistrement, magasins(nom))')
     .order('nom');
 
   let html = `<div class="section-title">Produits <button class="btn-ajouter-sm" onclick="ouvrirModalProduit(null)">+ Ajouter</button></div>`;
@@ -551,9 +543,9 @@ async function renderProduits() {
         <div class="produit-card" onclick="ouvrirFicheProduit('${p.id}')">
           <div class="item-photo">${icone}</div>
           <div class="item-info">
-            <div class="item-nom">${p.nom}</div>
-            <div class="item-meta">${p.marque||''} · ${p.categories?.nom||''}</div>
-            ${prixMin !== null ? `<div class="item-prix" style="margin-top:3px">${prixMin.toFixed(2).replace('.',',')} €</div>` : ''}
+            <div class="item-nom">${p.nom}${p.marque?` <span style="font-weight:400;color:var(--gris);font-size:12px">${p.marque}</span>`:''}</div>
+            <div class="item-meta">${p.categories?.nom||''}</div>
+            ${prixMin !== null ? `<div class="item-prix" style="margin-top:3px">${prixMin.toFixed(2).replace('.',',')} € <span style="font-size:11px;color:var(--gris)">(min)</span></div>` : '<div style="font-size:12px;color:var(--gris);margin-top:3px;font-style:italic">Aucun prix</div>'}
           </div>
           <div class="produit-actions" onclick="event.stopPropagation()">
             <button class="btn-add-panier" onclick="ajouterAuPanierDepuisProduit('${p.id}')">+ Panier</button>
@@ -569,29 +561,35 @@ async function ouvrirFicheProduit(produitId) {
     .select('*, categories(nom), prix(id, montant, est_promo, date_enregistrement, magasins(nom,ville))')
     .eq('id', produitId).single();
   if (!p) return;
+  // Trier prix par date desc
+  if (p.prix) p.prix.sort((a,b) => new Date(b.date_enregistrement) - new Date(a.date_enregistrement));
   ouvrirModalProduit(p);
 }
 
-async function ajouterAuPanierDepuisProduit(produitId) {
-  const { data: p } = await db.from('produits')
-    .select('*, categories(nom), prix(id, montant, est_promo, magasins(nom))')
-    .eq('id', produitId).single();
-  if (!p) return;
+async function ajouterAuPanierDepuisProduit(produitId, montant, magasinNom, estPromo) {
   const existant = panier.find(i => i.produit_id === produitId);
   if (existant) {
     existant.quantite++;
+    if (montant) { existant.montant = montant; existant.magasin_nom = magasinNom||existant.magasin_nom; existant.est_promo = estPromo||false; }
     afficherToast('Quantité mise à jour ✓');
-  } else {
-    const px = p.prix?.[0];
-    panier.push({
-      produit_id: produitId, nom: p.nom, marque: p.marque,
-      categorie_nom: p.categories?.nom, format: p.format,
-      contenance: p.contenance, unite: p.unite,
-      montant: px?.montant || 0, est_promo: px?.est_promo || false,
-      magasin_nom: px?.magasins?.nom || '', quantite: 1
-    });
-    afficherToast('Ajouté au panier ✓');
+    if (vueActuelle === 'panier') renderPanier();
+    return;
   }
+  const { data: p } = await db.from('produits')
+    .select('*, categories(nom), prix(montant, est_promo, magasins(nom))')
+    .eq('id', produitId).single();
+  if (!p) return;
+  const px = p.prix?.length ? p.prix.reduce((min,x) => x.montant < min.montant ? x : min, p.prix[0]) : null;
+  panier.push({
+    produit_id: produitId, nom: p.nom, marque: p.marque,
+    categorie_nom: p.categories?.nom,
+    format: p.format, contenance: p.contenance, unite: p.unite,
+    montant: montant || px?.montant || 0,
+    est_promo: estPromo || px?.est_promo || false,
+    magasin_nom: magasinNom || px?.magasins?.nom || '',
+    quantite: 1
+  });
+  afficherToast('Ajouté au panier ✓');
   if (vueActuelle === 'panier') renderPanier();
 }
 
@@ -599,22 +597,26 @@ async function ajouterAuPanierDepuisProduit(produitId) {
 async function renderMagasins() {
   const main = document.getElementById('main-content');
   main.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
-  const { data } = await db.from('magasins').select('*').order('nom');
-  const { data: prixData } = await db.from('prix').select('magasin_id');
+  const { data: mags } = await db.from('magasins').select('*').order('nom');
+  const { data: prixData } = await db.from('prix').select('magasin_id, produit_id');
   const counts = {};
   prixData?.forEach(p => { counts[p.magasin_id] = (counts[p.magasin_id]||0)+1; });
 
   let html = `<div class="section-title">Magasins <button class="btn-ajouter-sm" onclick="ouvrirModalMagasin()">+ Ajouter</button></div>`;
-  if (!data?.length) {
+  if (!mags?.length) {
     html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun magasin</p>';
   } else {
-    data.forEach(m => {
+    mags.forEach(m => {
       html += `
-        <div class="magasin-card">
-          <div class="magasin-nom">🏪 ${m.nom}</div>
-          <div class="magasin-ville">📍 ${m.ville}</div>
-          <div class="magasin-stats">${counts[m.id]||0} prix enregistré(s)</div>
-          <div class="magasin-actions">
+        <div class="magasin-card" onclick="voirProduitsMagasin('${m.id}','${m.nom.replace(/'/g,"\\'")}','${m.ville.replace(/'/g,"\\'")}')">
+          <div class="magasin-header">
+            <div>
+              <div class="magasin-nom">🏪 ${m.nom}</div>
+              <div class="magasin-ville">📍 ${m.ville}</div>
+              <div class="magasin-stats">${counts[m.id]||0} prix enregistré(s) →</div>
+            </div>
+          </div>
+          <div class="magasin-actions" onclick="event.stopPropagation()">
             <button class="btn-edit" onclick="ouvrirModalMagasin('${m.id}','${m.nom.replace(/'/g,"\\'")}','${m.ville.replace(/'/g,"\\'")}')">✏️ Modifier</button>
             <button class="btn-del" onclick="supprimerMagasin('${m.id}')">🗑 Supprimer</button>
           </div>
@@ -624,6 +626,63 @@ async function renderMagasins() {
   main.innerHTML = html;
 }
 
+async function voirProduitsMagasin(magId, magNom, magVille) {
+  const main = document.getElementById('main-content');
+  main.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
+
+  // Récupérer tous les prix pour ce magasin avec les produits
+  const { data: prixData } = await db.from('prix')
+    .select('montant, est_promo, date_enregistrement, produits(id, nom, marque, categorie_id, format, contenance, unite, categories(nom))')
+    .eq('magasin_id', magId)
+    .order('date_enregistrement', { ascending: false });
+
+  // Grouper par catégorie (meilleur prix par produit)
+  const produitsMap = {};
+  prixData?.forEach(px => {
+    const p = px.produits;
+    if (!p) return;
+    if (!produitsMap[p.id]) {
+      produitsMap[p.id] = { ...p, meilleurPrix: px.montant, est_promo: px.est_promo, date: px.date_enregistrement };
+    }
+  });
+
+  const parCat = {};
+  Object.values(produitsMap).forEach(p => {
+    const cat = p.categories?.nom || 'Autre';
+    if (!parCat[cat]) parCat[cat] = [];
+    parCat[cat].push(p);
+  });
+
+  let html = `
+    <div class="back-btn" onclick="renderMagasins()">‹ Retour</div>
+    <div class="section-title" style="font-size:16px">🏪 ${magNom} <span style="font-size:12px;font-weight:400;color:var(--gris)">– ${magVille}</span></div>`;
+
+  if (!Object.keys(parCat).length) {
+    html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun produit enregistré dans ce magasin</p>';
+  } else {
+    Object.entries(parCat).sort().forEach(([catNom, prods]) => {
+      const icone = ICONES[catNom] || '📦';
+      html += `<div class="groupe-label">${icone} ${catNom}</div>`;
+      prods.sort((a,b) => a.nom.localeCompare(b.nom)).forEach(p => {
+        html += `
+          <div class="produit-card" onclick="ouvrirFicheProduit('${p.id}')">
+            <div class="item-photo">${icone}</div>
+            <div class="item-info">
+              <div class="item-nom">${p.nom}${p.marque?` <span style="font-weight:400;color:var(--gris);font-size:12px">${p.marque}</span>`:''}</div>
+              <div class="item-meta">${p.format||''} ${p.contenance?p.contenance+(p.unite||''):''}</div>
+              <div class="item-prix" style="margin-top:3px">${p.meilleurPrix.toFixed(2).replace('.',',')} €${p.est_promo?'<span class="promo-badge">PROMO</span>':''}</div>
+            </div>
+            <div class="produit-actions" onclick="event.stopPropagation()">
+              <button class="btn-add-panier" onclick="ajouterAuPanierDepuisProduit('${p.id}',${p.meilleurPrix},'${magNom}',${p.est_promo})">+ Panier</button>
+            </div>
+          </div>`;
+      });
+    });
+  }
+  main.innerHTML = html;
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+}
+
 function ouvrirModalMagasin(id, nom, ville) {
   magasinEnEdition = id || null;
   document.getElementById('modal-magasin-titre').textContent = id ? 'Modifier le magasin' : 'Nouveau magasin';
@@ -631,25 +690,20 @@ function ouvrirModalMagasin(id, nom, ville) {
   document.getElementById('mag-ville').value = ville || '';
   document.getElementById('modal-magasin').classList.add('open');
 }
-
 async function sauvegarderMagasin() {
   const nom = document.getElementById('mag-nom').value.trim();
   const ville = document.getElementById('mag-ville').value.trim();
   if (!nom || !ville) { afficherToast('Nom et ville requis'); return; }
-  if (magasinEnEdition) {
-    await db.from('magasins').update({nom, ville}).eq('id', magasinEnEdition);
-  } else {
-    await db.from('magasins').insert({nom, ville});
-  }
+  if (magasinEnEdition) await db.from('magasins').update({nom,ville}).eq('id',magasinEnEdition);
+  else await db.from('magasins').insert({nom,ville});
   await chargerMagasins();
   fermerModal('modal-magasin');
   afficherToast(magasinEnEdition ? 'Magasin modifié ✓' : 'Magasin ajouté ✓');
   renderMagasins();
 }
-
 async function supprimerMagasin(id) {
   if (confirm('Supprimer ce magasin ?')) {
-    await db.from('magasins').delete().eq('id', id);
+    await db.from('magasins').delete().eq('id',id);
     await chargerMagasins();
     renderMagasins();
     afficherToast('Magasin supprimé');
@@ -683,14 +737,10 @@ async function voirCategorie(catId, catNom) {
   const main = document.getElementById('main-content');
   main.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
   const { data: produits } = await db.from('produits')
-    .select('*, prix(montant, est_promo, magasins(nom))')
+    .select('*, prix(montant, est_promo, date_enregistrement, magasins(nom))')
     .eq('categorie_id', catId).order('nom');
-
   const icone = ICONES[catNom] || '📦';
-  let html = `
-    <div class="back-btn" onclick="renderCategories()">‹ Retour</div>
-    <div class="section-title">${icone} ${catNom}</div>`;
-
+  let html = `<div class="back-btn" onclick="renderCategories()">‹ Retour</div><div class="section-title">${icone} ${catNom}</div>`;
   if (!produits?.length) {
     html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun produit</p>';
   } else {
@@ -700,14 +750,9 @@ async function voirCategorie(catId, catNom) {
         <div class="produit-card" onclick="ouvrirFicheProduit('${p.id}')">
           <div class="item-photo">${icone}</div>
           <div class="item-info">
-            <div class="item-nom">${p.nom}</div>
-            <div class="item-meta">${p.marque||''}</div>
-            ${prixMin !== null ? `<div class="item-prix" style="margin-top:3px">${prixMin.toFixed(2).replace('.',',')} €</div>` : ''}
-            ${p.prix?.length > 1 ? `<div class="prix-historique">${p.prix.map(px=>`
-              <div class="prix-ligne">
-                <span class="prix-ligne-magasin">${px.magasins?.nom||''}</span>
-                <span class="prix-ligne-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} € ${px.est_promo?'🏷️':''}</span>
-              </div>`).join('')}</div>` : ''}
+            <div class="item-nom">${p.nom}${p.marque?` <span style="font-weight:400;color:var(--gris);font-size:12px">${p.marque}</span>`:''}</div>
+            ${prixMin !== null ? `<div class="item-prix" style="margin-top:3px">${prixMin.toFixed(2).replace('.',',')} € <span style="font-size:11px;color:var(--gris)">(min)</span></div>` : '<div style="font-size:12px;color:var(--gris);margin-top:3px;font-style:italic">Aucun prix</div>'}
+            ${p.prix?.length ? `<div style="font-size:11px;color:var(--gris);margin-top:2px">${p.prix.length} prix enregistré(s)</div>` : ''}
           </div>
           <div class="produit-actions" onclick="event.stopPropagation()">
             <button class="btn-add-panier" onclick="ajouterAuPanierDepuisProduit('${p.id}')">+ Panier</button>
@@ -723,6 +768,7 @@ async function voirCategorie(catId, catNom) {
 function ouvrirModalAjouter() {
   document.getElementById('search-produit').value = '';
   document.getElementById('search-results').innerHTML = '';
+  arreterScanner();
   document.getElementById('modal-panier').classList.add('open');
 }
 
@@ -732,29 +778,34 @@ async function rechercherProduit(query) {
     .select('*, prix(montant)')
     .ilike('nom', `%${query}%`).limit(8);
   const container = document.getElementById('search-results');
-  if (!data?.length) {
-    container.innerHTML = '<div style="color:var(--gris);font-size:13px;padding:10px">Aucun résultat</div>';
-    return;
-  }
+  if (!data?.length) { container.innerHTML = '<div style="color:var(--gris);font-size:13px;padding:10px">Aucun résultat — créez la fiche ci-dessous</div>'; return; }
   container.innerHTML = data.map(p => {
     const prixMin = p.prix?.length ? Math.min(...p.prix.map(x=>x.montant)) : null;
     return `<div class="search-result-item" onclick="selectionnerProduit('${p.id}')">
       <div><div class="result-nom">${p.nom}</div><div style="font-size:11px;color:var(--gris)">${p.marque||''}</div></div>
-      ${prixMin !== null ? `<span class="result-prix">${prixMin.toFixed(2).replace('.',',')} €</span>` : ''}
+      ${prixMin !== null ? `<span class="result-prix">${prixMin.toFixed(2).replace('.',',')} €</span>` : '<span style="font-size:12px;color:var(--gris)">Sans prix</span>'}
     </div>`;
   }).join('');
 }
 
 async function selectionnerProduit(produitId) {
-  await ajouterAuPanierDepuisProduit(produitId);
   fermerModal('modal-panier');
+  await ajouterAuPanierDepuisProduit(produitId);
   changerVue('panier');
 }
 
 // ===== MODAL FICHE PRODUIT =====
+function afficherFormPrix() {
+  prixFormVisible = true;
+  document.getElementById('prix-form-toggle').style.display = 'none';
+  document.getElementById('prix-form-inline').style.display = 'block';
+  remplirSelectMagasins();
+}
+
 function ouvrirModalProduit(produit) {
   produitEnEdition = produit || null;
-  document.getElementById('modal-produit-titre').textContent = produit ? 'Modifier le produit' : 'Nouvelle fiche produit';
+  prixFormVisible = false;
+  document.getElementById('modal-produit-titre').textContent = produit?.id ? 'Fiche produit' : 'Nouveau produit';
   document.getElementById('prod-nom').value = produit?.nom || '';
   document.getElementById('prod-marque').value = produit?.marque || '';
   document.getElementById('prod-sous-cat').value = produit?.sous_categorie || '';
@@ -763,6 +814,8 @@ function ouvrirModalProduit(produit) {
   document.getElementById('prod-code-barres').value = produit?.code_barres || '';
   document.getElementById('prod-prix').value = '';
   document.getElementById('prod-promo').checked = false;
+  document.getElementById('prix-form-toggle').style.display = 'block';
+  document.getElementById('prix-form-inline').style.display = 'none';
 
   // Reset photo
   const zone = document.getElementById('photo-upload-zone');
@@ -771,15 +824,35 @@ function ouvrirModalProduit(produit) {
   remplirSelectCategories();
   remplirSelectMagasins();
 
-  // Sélectionner catégorie si en édition
-  if (produit?.categorie_id) {
-    setTimeout(() => { document.getElementById('prod-categorie').value = produit.categorie_id; }, 100);
-  }
-  if (produit?.format) {
-    setTimeout(() => { document.getElementById('prod-format').value = produit.format; }, 100);
-  }
-  if (produit?.unite) {
-    setTimeout(() => { document.getElementById('prod-unite').value = produit.unite; }, 100);
+  if (produit?.categorie_id) setTimeout(() => { document.getElementById('prod-categorie').value = produit.categorie_id; }, 100);
+  if (produit?.format) setTimeout(() => { document.getElementById('prod-format').value = produit.format; }, 100);
+  if (produit?.unite) setTimeout(() => { document.getElementById('prod-unite').value = produit.unite; }, 100);
+
+  // Historique prix
+  const histBloc = document.getElementById('historique-prix-bloc');
+  if (produit?.prix?.length) {
+    const prixMin = Math.min(...produit.prix.map(x=>x.montant));
+    histBloc.style.display = 'block';
+    histBloc.innerHTML = `
+      <div class="historique-bloc">
+        <div class="historique-titre">📊 Historique des prix (${produit.prix.length})</div>
+        ${produit.prix.map(px => {
+          const date = new Date(px.date_enregistrement).toLocaleDateString('fr-FR', {day:'2-digit',month:'short',year:'numeric'});
+          const estMin = px.montant === prixMin;
+          return `<div class="prix-ligne">
+            <div class="prix-ligne-gauche">
+              <div class="prix-ligne-magasin">${px.magasins?.nom||'?'} – ${px.magasins?.ville||''}</div>
+              <div class="prix-ligne-date">${date}</div>
+            </div>
+            <div>
+              <span class="prix-ligne-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} €${px.est_promo?' 🏷️':''}</span>
+              ${estMin ? '<span class="prix-min-tag">MIN</span>' : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  } else {
+    histBloc.style.display = 'none';
   }
 
   fermerModal('modal-panier');
@@ -788,11 +861,9 @@ function ouvrirModalProduit(produit) {
 
 async function sauvegarderProduit() {
   const nom = document.getElementById('prod-nom').value.trim();
-  const prix = parseFloat(document.getElementById('prod-prix').value);
-  const magasinId = document.getElementById('prod-magasin').value;
-  const categorieId = document.getElementById('prod-categorie').value;
   if (!nom) { afficherToast('Le nom est requis'); return; }
 
+  const categorieId = document.getElementById('prod-categorie').value;
   const produitData = {
     nom,
     marque: document.getElementById('prod-marque').value.trim() || null,
@@ -806,79 +877,87 @@ async function sauvegarderProduit() {
   };
 
   let produitId = produitEnEdition?.id;
-  if (produitEnEdition) {
+  if (produitEnEdition?.id) {
     await db.from('produits').update(produitData).eq('id', produitEnEdition.id);
   } else {
     const { data } = await db.from('produits').insert(produitData).select().single();
     produitId = data?.id;
   }
 
-  if (prix > 0 && magasinId && produitId) {
-    await db.from('prix').insert({
-      produit_id: produitId, magasin_id: magasinId,
-      montant: prix, est_promo: document.getElementById('prod-promo').checked,
+  // Prix si renseigné
+  const prix = parseFloat(document.getElementById('prod-prix').value);
+  const magasinId = document.getElementById('prod-magasin').value;
+  let montantPanier = null, magasinNomPanier = null, estPromoPanier = false;
+
+  if (prixFormVisible && prix > 0 && magasinId && produitId) {
+    estPromoPanier = document.getElementById('prod-promo').checked;
+    await db.from('prix').insert({ produit_id: produitId, magasin_id: magasinId, montant: prix, est_promo: estPromoPanier });
+    montantPanier = prix;
+    magasinNomPanier = magasins.find(m=>m.id===magasinId)?.nom || '';
+  }
+
+  // Ajouter/mettre à jour panier
+  const existant = panier.find(i => i.produit_id === produitId);
+  if (existant) {
+    if (montantPanier) { existant.montant = montantPanier; existant.magasin_nom = magasinNomPanier; existant.est_promo = estPromoPanier; }
+    Object.assign(existant, { nom: produitData.nom, marque: produitData.marque, format: produitData.format, contenance: produitData.contenance, unite: produitData.unite });
+  } else {
+    panier.push({
+      produit_id: produitId, nom: produitData.nom, marque: produitData.marque,
+      categorie_nom: categories.find(c=>c.id===categorieId)?.nom || '',
+      format: produitData.format, contenance: produitData.contenance, unite: produitData.unite,
+      montant: montantPanier || 0, est_promo: estPromoPanier,
+      magasin_nom: magasinNomPanier || '', quantite: 1
     });
-    const existant = panier.find(i => i.produit_id === produitId);
-    if (existant) {
-      existant.montant = prix;
-    } else {
-      panier.push({
-        produit_id: produitId, nom: produitData.nom, marque: produitData.marque,
-        categorie_nom: categories.find(c=>c.id===categorieId)?.nom || '',
-        format: produitData.format, contenance: produitData.contenance,
-        unite: produitData.unite, montant: prix,
-        est_promo: document.getElementById('prod-promo').checked,
-        magasin_nom: magasins.find(m=>m.id===magasinId)?.nom || '',
-        quantite: 1
-      });
-    }
   }
 
   fermerModal('modal-produit');
-  afficherToast(produitEnEdition ? 'Produit modifié ✓' : 'Produit ajouté ✓');
-  if (vueActuelle === 'produits') renderProduits();
-  else changerVue('panier');
+  afficherToast(produitEnEdition?.id ? 'Produit modifié ✓' : 'Produit créé et ajouté au panier ✓');
+  changerVue('panier');
 }
 
 // ===== SCANNER =====
 function ouvrirScanner() {
   document.getElementById('qr-container').style.display = 'block';
+  if (scannerInstance) return;
   scannerInstance = new Html5Qrcode('qr-reader');
   scannerInstance.start(
     { facingMode: 'environment' },
     { fps: 10, qrbox: { width: 250, height: 150 } },
     async (code) => { arreterScanner(); await rechercherParCodeBarres(code); },
     () => {}
-  ).catch(err => { afficherToast('Caméra non disponible'); arreterScanner(); });
+  ).catch(() => { afficherToast('Caméra non disponible'); arreterScanner(); });
 }
-
 function arreterScanner() {
   if (scannerInstance) { scannerInstance.stop().catch(()=>{}); scannerInstance = null; }
-  document.getElementById('qr-container').style.display = 'none';
+  const c = document.getElementById('qr-container');
+  if (c) c.style.display = 'none';
 }
-
 async function rechercherParCodeBarres(code) {
-  afficherToast('Code scanné : ' + code);
+  afficherToast('Code : ' + code);
+  // 1. Chercher dans notre BDD
   const { data: local } = await db.from('produits').select('*').eq('code_barres', code).maybeSingle();
-  if (local) { await selectionnerProduit(local.id); return; }
-  // OpenFoodFacts
+  if (local) { fermerModal('modal-panier'); await selectionnerProduit(local.id); return; }
+  // 2. OpenFoodFacts
+  let prefill = { code_barres: code, nom: '', marque: '' };
   try {
     const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
     const json = await res.json();
     if (json.status === 1) {
       const p = json.product;
-      const fakeProduit = {
-        nom: p.product_name_fr || p.product_name || '',
-        marque: p.brands || '',
-        code_barres: code,
-      };
-      ouvrirModalProduit(fakeProduit);
-      afficherToast('Produit trouvé sur OpenFoodFacts ✓');
-      return;
+      prefill.nom = p.product_name_fr || p.product_name || '';
+      prefill.marque = p.brands || '';
+      afficherToast('Trouvé sur OpenFoodFacts ✓');
     }
   } catch(e) {}
-  document.getElementById('prod-code-barres').value = code;
-  ouvrirModalProduit(null);
+  fermerModal('modal-panier');
+  ouvrirModalProduit(prefill);
+  // Remplir les champs après ouverture
+  setTimeout(() => {
+    document.getElementById('prod-nom').value = prefill.nom;
+    document.getElementById('prod-marque').value = prefill.marque;
+    document.getElementById('prod-code-barres').value = prefill.code_barres;
+  }, 200);
 }
 
 // ===== PHOTO =====
@@ -894,20 +973,18 @@ function previewPhoto(input) {
 }
 
 // ===== UTILS =====
-function fermerModal(id) { document.getElementById(id).classList.remove('open'); }
+function fermerModal(id) { document.getElementById(id)?.classList.remove('open'); }
 function afficherToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  setTimeout(() => t.classList.remove('show'), 2800);
 }
 document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+  o.addEventListener('click', e => { if (e.target === o) { o.classList.remove('open'); arreterScanner(); } });
 });
 
 init();
 </script>
-<script>
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-</script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
 </body>
 </html>
