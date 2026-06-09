@@ -535,6 +535,7 @@ function renderPanierItem(item, idx) {
     ? `<span class="item-prix">${((item.montant)*item.quantite).toFixed(2).replace('.',',')} €${item.est_promo ? '<span class="promo-badge">PROMO</span>' : ''}</span>`
     : `<span class="item-prix sans-prix">Prix non renseigné – appuyer pour ajouter</span>`;
   const metaArr = [item.magasin_nom, item.format, item.contenance ? item.contenance+(item.unite||'') : ''].filter(Boolean);
+  const key = encodeURIComponent(item.panier_key || (item.produit_id + '_'));
   return `
     <div class="panier-item" onclick="ouvrirFicheProduit('${item.produit_id}')">
       <div class="item-photo">${icone}</div>
@@ -544,14 +545,25 @@ function renderPanierItem(item, idx) {
         <div style="margin-top:3px">${prixHtml}</div>
       </div>
       <div class="item-qty" onclick="event.stopPropagation()">
-        <button class="qty-btn" onclick="modifierQty(${idx},-1)">−</button>
+        <button class="qty-btn" onclick="modifierQtyByKey('${key}',-1)">−</button>
         <span class="qty-num">${item.quantite}</span>
-        <button class="qty-btn" onclick="modifierQty(${idx},1)">+</button>
+        <button class="qty-btn" onclick="modifierQtyByKey('${key}',1)">+</button>
       </div>
     </div>`;
 }
 
 function setTri(tri) { triPanier = tri; renderPanier(); }
+
+function modifierQtyByKey(encodedKey, delta) {
+  const key = decodeURIComponent(encodedKey);
+  const index = panier.findIndex(i => (i.panier_key || (i.produit_id + '_')) === key);
+  if (index === -1) return;
+  panier[index].quantite += delta;
+  if (panier[index].quantite <= 0) panier.splice(index, 1);
+  sauvegarderPanierLocal();
+  renderPanier();
+}
+
 function modifierQty(index, delta) {
   panier[index].quantite += delta;
   if (panier[index].quantite <= 0) panier.splice(index, 1);
@@ -849,13 +861,14 @@ async function rechercherProduit(query) {
   if (!query.trim()) { document.getElementById('search-results').innerHTML = ''; return; }
   const { data } = await db.from('produits')
     .select('*, prix(montant)')
-    .ilike('nom', `%${query}%`).limit(8);
+    .or(`nom.ilike.%${query}%,sous_categorie.ilike.%${query}%,marque.ilike.%${query}%`)
+    .limit(10);
   const container = document.getElementById('search-results');
   if (!data?.length) { container.innerHTML = '<div style="color:var(--gris);font-size:13px;padding:10px">Aucun résultat — créez la fiche ci-dessous</div>'; return; }
   container.innerHTML = data.map(p => {
     const prixMin = p.prix?.length ? Math.min(...p.prix.map(x=>x.montant)) : null;
     return `<div class="search-result-item" onclick="selectionnerProduit('${p.id}')">
-      <div><div class="result-nom">${p.nom}</div><div style="font-size:11px;color:var(--gris)">${p.marque||''}</div></div>
+      <div><div class="result-nom">${p.nom}</div><div style="font-size:11px;color:var(--gris)">${p.marque||''}${p.sous_categorie?' · '+p.sous_categorie:''}</div></div>
       ${prixMin !== null ? `<span class="result-prix">${prixMin.toFixed(2).replace('.',',')} €</span>` : '<span style="font-size:12px;color:var(--gris)">Sans prix</span>'}
     </div>`;
   }).join('');
