@@ -428,6 +428,15 @@ async function init() {
   chargerPanierLocal(); // Restaurer le panier depuis localStorage
   await Promise.all([chargerCategories(), chargerMagasins()]);
   changerVue('panier');
+  // Sauvegarde automatique toutes les 3 secondes
+  setInterval(sauvegarderPanierLocal, 3000);
+  // Sauvegarde immédiate quand l'app passe en arrière-plan
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') sauvegarderPanierLocal();
+  });
+  // Sauvegarde avant fermeture
+  window.addEventListener('beforeunload', sauvegarderPanierLocal);
+  window.addEventListener('pagehide', sauvegarderPanierLocal);
 }
 
 function sauvegarderPanierLocal() {
