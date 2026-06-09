@@ -425,8 +425,20 @@ const ICONES = {
 
 // ===== INIT =====
 async function init() {
+  chargerPanierLocal(); // Restaurer le panier depuis localStorage
   await Promise.all([chargerCategories(), chargerMagasins()]);
   changerVue('panier');
+}
+
+function sauvegarderPanierLocal() {
+  try { localStorage.setItem('kazprix_panier', JSON.stringify(panier)); } catch(e) {}
+}
+
+function chargerPanierLocal() {
+  try {
+    const data = localStorage.getItem('kazprix_panier');
+    if (data) panier = JSON.parse(data);
+  } catch(e) { panier = []; }
 }
 
 async function chargerCategories() {
@@ -534,9 +546,10 @@ function setTri(tri) { triPanier = tri; renderPanier(); }
 function modifierQty(index, delta) {
   panier[index].quantite += delta;
   if (panier[index].quantite <= 0) panier.splice(index, 1);
+  sauvegarderPanierLocal();
   renderPanier();
 }
-function viderPanier() { if (confirm('Vider le panier ?')) { panier = []; renderPanier(); afficherToast('Panier vidé'); } }
+function viderPanier() { if (confirm('Vider le panier ?')) { panier = []; sauvegarderPanierLocal(); renderPanier(); afficherToast('Panier vidé'); } }
 
 function mettreAJourTotaux() {
   if (panier.length === 0) { document.getElementById('panier-totaux').style.display = 'none'; return; }
@@ -617,6 +630,7 @@ async function ajouterAuPanierDepuisProduit(produitId, montant, magasinNom, estP
   const existant = panier.find(i => i.produit_id === produitId && (i.magasin_nom||'') === (magasinNom||''));
   if (existant) {
     existant.quantite++;
+    sauvegarderPanierLocal();
     afficherToast('Quantité mise à jour ✓');
     if (vueActuelle === 'panier') renderPanier();
     return;
@@ -638,6 +652,7 @@ async function ajouterAuPanierDepuisProduit(produitId, montant, magasinNom, estP
     // Stocker tous les prix disponibles pour ce produit (min/max)
     tous_prix: p.prix?.map(px => px.montant) || []
   });
+  sauvegarderPanierLocal();
   afficherToast('Ajouté au panier ✓');
   if (vueActuelle === 'panier') renderPanier();
 }
@@ -965,6 +980,7 @@ async function confirmerChoixPrix(index) {
       existant.est_promo = px.est_promo || false;
       existant.magasin_nom = px.magasins?.nom || '';
       existant.panier_key = produitEnSelection.id + '_' + (px.magasins?.nom||'');
+      sauvegarderPanierLocal();
       afficherToast('Prix mis à jour ✓');
       changerVue('panier');
     } else {
@@ -983,7 +999,7 @@ async function ajouterSansPrix() {
   if (!produitEnSelection) return;
   const key = produitEnSelection.id + '_';
   const existant = panier.find(i => i.panier_key === key);
-  if (existant) { existant.quantite++; afficherToast('Quantité mise à jour ✓'); }
+  if (existant) { existant.quantite++; sauvegarderPanierLocal(); afficherToast('Quantité mise à jour ✓'); }
   else {
     panier.push({
       panier_key: key,
@@ -993,6 +1009,7 @@ async function ajouterSansPrix() {
       montant: 0, est_promo: false, magasin_nom: '', quantite: 1,
       tous_prix: produitEnSelection.prix?.map(x=>x.montant) || []
     });
+    sauvegarderPanierLocal();
     afficherToast('Ajouté au panier ✓');
   }
   changerVue('panier');
@@ -1128,10 +1145,12 @@ async function sauvegarderProduit() {
       categorie_nom: categories.find(c=>c.id===categorieId)?.nom || '',
       format: produitData.format, contenance: produitData.contenance, unite: produitData.unite,
       montant: montantPanier || 0, est_promo: estPromoPanier,
-      magasin_nom: magasinNomPanier || '', quantite: 1
+      magasin_nom: magasinNomPanier || '', quantite: 1,
+      panier_key: produitId + '_' + (magasinNomPanier||'')
     });
   }
 
+  sauvegarderPanierLocal();
   fermerModal('modal-produit');
   afficherToast(produitEnEdition?.id ? 'Produit modifié ✓' : 'Produit créé et ajouté au panier ✓');
   changerVue('panier');
