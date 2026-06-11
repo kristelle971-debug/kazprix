@@ -605,27 +605,53 @@ function mettreAJourTotaux() {
 }
 
 // ===== PRODUITS =====
+let rechercheProduitsQuery = '';
+let afficherArchives = false;
+
 async function renderProduits() {
   const main = document.getElementById('main-content');
   main.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
-  const { data: produits } = await db.from('produits')
+
+  let query = db.from('produits')
     .select('*, categories(nom), prix(montant, est_promo, date_enregistrement, magasins(nom))')
     .order('nom');
 
-  let html = `<div class="section-title">Produits <button class="btn-ajouter-sm" onclick="ouvrirModalProduit(null)">+ Ajouter</button></div>`;
+  if (!afficherArchives) query = query.eq('est_archive', false);
+
+  if (rechercheProduitsQuery.trim()) {
+    query = query.or(`nom.ilike.%${rechercheProduitsQuery}%,sous_categorie.ilike.%${rechercheProduitsQuery}%,marque.ilike.%${rechercheProduitsQuery}%`);
+  }
+
+  const { data: produits } = await query;
+
+  let html = `
+    <div class="section-title">Produits <button class="btn-ajouter-sm" onclick="ouvrirModalProduit(null)">+ Ajouter</button></div>
+    <div class="search-bar" style="margin-bottom:12px">
+      <input type="text" class="search-input" placeholder="Rechercher par nom, marque, sous-catégorie..." value="${rechercheProduitsQuery}" oninput="filtrerProduits(this.value)" autocomplete="off" />
+      <span class="search-icon">🔍</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gris);cursor:pointer">
+        <input type="checkbox" ${afficherArchives?'checked':''} onchange="toggleArchives(this.checked)" style="accent-color:var(--gris)" />
+        Afficher les produits archivés
+      </label>
+    </div>`;
+
   if (!produits?.length) {
-    html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun produit enregistré</p>';
+    html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun produit trouvé</p>';
   } else {
     produits.forEach(p => {
-      const prixMin = p.prix?.length ? Math.min(...p.prix.map(x=>x.montant)) : null;
+      const prixActifs = p.prix?.filter(x => !x.est_obsolete) || [];
+      const prixMin = prixActifs.length ? Math.min(...prixActifs.map(x=>x.montant)) : null;
       const icone = ICONES[p.categories?.nom] || '📦';
+      const archiveStyle = p.est_archive ? 'opacity:0.5' : '';
       html += `
-        <div class="produit-card" onclick="ouvrirFicheProduit('${p.id}')">
+        <div class="produit-card" onclick="ouvrirFicheProduit('${p.id}')" style="${archiveStyle}">
           <div class="item-photo">${icone}</div>
           <div class="item-info">
-            <div class="item-nom">${p.nom}${p.marque?` <span style="font-weight:400;color:var(--gris);font-size:12px">${p.marque}</span>`:''}</div>
+            <div class="item-nom">${p.nom}${p.marque?` <span style="font-weight:400;color:var(--gris);font-size:12px">${p.marque}</span>`:''} ${p.est_archive?'<span style="font-size:10px;background:var(--gris-clair);color:var(--gris);padding:2px 6px;border-radius:8px">archivé</span>':''}</div>
             <div class="item-meta">${p.categories?.nom||''}</div>
-            ${prixMin !== null ? `<div class="item-prix" style="margin-top:3px">${prixMin.toFixed(2).replace('.',',')} € <span style="font-size:11px;color:var(--gris)">(min)</span></div>` : '<div style="font-size:12px;color:var(--gris);margin-top:3px;font-style:italic">Aucun prix</div>'}
+            ${prixMin !== null ? `<div class="item-prix" style="margin-top:3px">${prixMin.toFixed(2).replace('.',',')} € <span style="font-size:11px;color:var(--gris)">(min actif)</span></div>` : '<div style="font-size:12px;color:var(--gris);margin-top:3px;font-style:italic">Aucun prix</div>'}
           </div>
           <div class="produit-actions" onclick="event.stopPropagation()">
             <button class="btn-add-panier" onclick="ajouterAuPanierDepuisProduit('${p.id}')">+ Panier</button>
@@ -634,6 +660,16 @@ async function renderProduits() {
     });
   }
   main.innerHTML = html;
+}
+
+function filtrerProduits(query) {
+  rechercheProduitsQuery = query;
+  renderProduits();
+}
+
+function toggleArchives(val) {
+  afficherArchives = val;
+  renderProduits();
 }
 
 async function ouvrirFicheProduit(produitId) {
@@ -948,26 +984,29 @@ let modeRemplacement = false; // true = on remplace le prix, false = on ajoute a
 function afficherChoixPrix(p) {
   document.getElementById('choix-prix-titre').textContent = p.nom;
 
-  // Dédupliquer par magasin : garder le prix le plus récent par magasin
+  // Ne garder que les prix non obsolètes, dédupliquer par magasin (plus récent)
   const parMagasin = {};
-  p.prix.forEach(px => {
+  p.prix.filter(px => !px.est_obsolete).forEach(px => {
     const mid = (px.magasins?.nom||'') + (px.magasins?.ville||'');
     if (!parMagasin[mid] || new Date(px.date_enregistrement) > new Date(parMagasin[mid].date_enregistrement)) {
       parMagasin[mid] = px;
     }
   });
 
-  // Trier par montant croissant
   prixChoixActuels = Object.values(parMagasin).sort((a,b) => a.montant - b.montant);
-  const prixMin = prixChoixActuels[0]?.montant;
-  const prixMax = prixChoixActuels[prixChoixActuels.length-1]?.montant;
 
+  if (!prixChoixActuels.length) {
+    // Tous les prix sont obsolètes
+    document.getElementById('choix-prix-liste').innerHTML = '<p style="color:var(--gris);font-size:13px;text-align:center;padding:16px">Tous les prix sont marqués obsolètes.<br>Ajoutez un nouveau prix dans la fiche produit.</p>';
+    document.getElementById('modal-choix-prix').classList.add('open');
+    return;
+  }
+
+  const prixMin = prixChoixActuels[0]?.montant;
   const liste = document.getElementById('choix-prix-liste');
   liste.innerHTML = prixChoixActuels.map((px, i) => {
     const date = new Date(px.date_enregistrement).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'});
     const estMin = px.montant === prixMin;
-    const estMax = px.montant === prixMax && prixChoixActuels.length > 1;
-    // Différence par rapport au min
     const diff = prixChoixActuels.length > 1 && !estMin
       ? '+' + ((px.montant - prixMin) / prixMin * 100).toFixed(0) + '%'
       : null;
@@ -1071,12 +1110,12 @@ function ouvrirModalProduit(produit) {
   if (produit?.format) setTimeout(() => { document.getElementById('prod-format').value = produit.format; }, 100);
   if (produit?.unite) setTimeout(() => { document.getElementById('prod-unite').value = produit.unite; }, 100);
 
-  // Historique prix avec variations
+  // Historique prix avec variations + actions
   const histBloc = document.getElementById('historique-prix-bloc');
   if (produit?.prix?.length) {
-    const prixMin = Math.min(...produit.prix.map(x=>x.montant));
-    const prixMax = Math.max(...produit.prix.map(x=>x.montant));
-    // Prix triés par date desc pour calcul variation
+    const prixActifs = produit.prix.filter(x => !x.est_obsolete);
+    const prixMin = prixActifs.length ? Math.min(...prixActifs.map(x=>x.montant)) : null;
+    const prixMax = prixActifs.length ? Math.max(...prixActifs.map(x=>x.montant)) : null;
     const prixTries = [...produit.prix].sort((a,b) => new Date(b.date_enregistrement) - new Date(a.date_enregistrement));
 
     histBloc.style.display = 'block';
@@ -1085,34 +1124,47 @@ function ouvrirModalProduit(produit) {
         <div class="historique-titre">📊 Historique des prix (${produit.prix.length})</div>
         ${prixTries.map((px, i) => {
           const date = new Date(px.date_enregistrement).toLocaleDateString('fr-FR', {day:'2-digit',month:'short',year:'numeric'});
-          const estMin = px.montant === prixMin;
-          const estMax = px.montant === prixMax && produit.prix.length > 1;
-          // Variation par rapport au prix suivant (plus ancien)
+          const estMin = !px.est_obsolete && px.montant === prixMin;
+          const estMax = !px.est_obsolete && px.montant === prixMax && prixActifs.length > 1;
           let variationHtml = '';
           if (i < prixTries.length - 1) {
-            const pxPrecedent = prixTries[i + 1];
+            const pxPrecedent = prixTries[i+1];
             const diff = px.montant - pxPrecedent.montant;
             const pct = ((diff / pxPrecedent.montant) * 100).toFixed(0);
             if (diff > 0) variationHtml = `<span style="color:var(--rouge);font-size:10px;font-weight:700">📈 +${pct}%</span>`;
             else if (diff < 0) variationHtml = `<span style="color:var(--vert-accent);font-size:10px;font-weight:700">📉 ${pct}%</span>`;
             else variationHtml = `<span style="color:var(--gris);font-size:10px">= stable</span>`;
           }
-          return `<div class="prix-ligne">
-            <div class="prix-ligne-gauche">
-              <div class="prix-ligne-magasin">${px.magasins?.nom||'?'} – ${px.magasins?.ville||''}</div>
-              <div class="prix-ligne-date">${date} ${variationHtml}</div>
-            </div>
-            <div style="text-align:right">
-              <div><span class="prix-ligne-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} €</span>${px.est_promo?' 🏷️':''}</div>
-              ${estMin ? '<span class="prix-min-tag">💚 MIN</span>' : ''}
-              ${estMax ? '<span style="background:#ffe5e7;color:var(--rouge);font-size:9px;font-weight:700;padding:2px 5px;border-radius:6px">📈 MAX</span>' : ''}
-            </div>
-          </div>`;
+          const obsoleteStyle = px.est_obsolete ? 'opacity:0.45;text-decoration:line-through' : '';
+          return `
+            <div class="prix-ligne" style="${obsoleteStyle}">
+              <div class="prix-ligne-gauche">
+                <div class="prix-ligne-magasin">${px.magasins?.nom||'?'} – ${px.magasins?.ville||''}</div>
+                <div class="prix-ligne-date">${date} ${variationHtml} ${px.est_obsolete?'<span style="background:var(--gris-clair);color:var(--gris);font-size:9px;padding:1px 5px;border-radius:6px">obsolète</span>':''}</div>
+              </div>
+              <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+                <div><span class="prix-ligne-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} €</span>${px.est_promo?' 🏷️':''}</div>
+                ${estMin ? '<span class="prix-min-tag">💚 MIN</span>' : ''}
+                ${estMax ? '<span style="background:#ffe5e7;color:var(--rouge);font-size:9px;font-weight:700;padding:2px 5px;border-radius:6px">📈 MAX</span>' : ''}
+                <div style="display:flex;gap:4px;margin-top:2px">
+                  <button onclick="modifierPrix('${px.id}','${produit.id}',${px.montant})" style="font-size:11px;padding:3px 8px;border:1px solid var(--gris-clair);border-radius:6px;background:white;cursor:pointer">✏️</button>
+                  <button onclick="toggleObsolete('${px.id}','${produit.id}',${px.est_obsolete})" style="font-size:11px;padding:3px 8px;border:1px solid var(--gris-clair);border-radius:6px;background:white;cursor:pointer">${px.est_obsolete?'↩️':'🚫'}</button>
+                  <button onclick="supprimerPrix('${px.id}','${produit.id}')" style="font-size:11px;padding:3px 8px;border:1px solid #ffd0d3;border-radius:6px;background:white;color:var(--rouge);cursor:pointer">🗑</button>
+                </div>
+              </div>
+            </div>`;
         }).join('')}
       </div>
-      <button class="btn-outline-vert" style="margin-top:8px" onclick="selectionnerPrixPourPanier('${produit.id}')">🛒 Choisir le prix pour le panier</button>`;
+      <button class="btn-outline-vert" style="margin-top:8px" onclick="selectionnerPrixPourPanier('${produit.id}')">🛒 Choisir le prix pour le panier</button>
+      <button onclick="archiverProduit('${produit.id}',${produit.est_archive})" style="width:100%;margin-top:6px;padding:11px;background:white;border:1.5px solid var(--gris-clair);border-radius:var(--radius);font-size:14px;cursor:pointer;color:var(--gris)">
+        ${produit.est_archive ? '↩️ Désarchiver le produit' : '📦 Archiver le produit'}
+      </button>`;
   } else {
-    histBloc.style.display = 'none';
+    histBloc.style.display = 'block';
+    histBloc.innerHTML = `
+      <button onclick="archiverProduit('${produit?.id}',${produit?.est_archive})" style="width:100%;margin-top:6px;padding:11px;background:white;border:1.5px solid var(--gris-clair);border-radius:var(--radius);font-size:14px;cursor:pointer;color:var(--gris)">
+        ${produit?.est_archive ? '↩️ Désarchiver le produit' : '📦 Archiver le produit'}
+      </button>`;
   }
 
   fermerModal('modal-panier');
@@ -1178,6 +1230,37 @@ async function sauvegarderProduit() {
   changerVue('panier');
 }
 
+// ===== ACTIONS PRIX =====
+async function modifierPrix(prixId, produitId, montantActuel) {
+  const nouveau = prompt('Nouveau prix (€) :', montantActuel);
+  if (!nouveau || isNaN(parseFloat(nouveau))) return;
+  await db.from('prix').update({ montant: parseFloat(nouveau) }).eq('id', prixId);
+  afficherToast('Prix modifié ✓');
+  await ouvrirFicheProduit(produitId);
+}
+
+async function toggleObsolete(prixId, produitId, estObsolete) {
+  await db.from('prix').update({ est_obsolete: !estObsolete }).eq('id', prixId);
+  afficherToast(estObsolete ? 'Prix réactivé ✓' : 'Prix marqué obsolète ✓');
+  await ouvrirFicheProduit(produitId);
+}
+
+async function supprimerPrix(prixId, produitId) {
+  if (!confirm('Supprimer définitivement ce prix ?')) return;
+  await db.from('prix').delete().eq('id', prixId);
+  afficherToast('Prix supprimé ✓');
+  await ouvrirFicheProduit(produitId);
+}
+
+async function archiverProduit(produitId, estArchive) {
+  const msg = estArchive ? 'Désarchiver ce produit ?' : 'Archiver ce produit ? Il n\'apparaîtra plus dans les listes.';
+  if (!confirm(msg)) return;
+  await db.from('produits').update({ est_archive: !estArchive }).eq('id', produitId);
+  afficherToast(estArchive ? 'Produit désarchivé ✓' : 'Produit archivé ✓');
+  fermerModal('modal-produit');
+  if (vueActuelle === 'produits') renderProduits();
+}
+
 // ===== SCANNER =====
 function ouvrirScanner() {
   document.getElementById('qr-container').style.display = 'block';
@@ -1196,25 +1279,39 @@ function arreterScanner() {
   if (c) c.style.display = 'none';
 }
 async function rechercherParCodeBarres(code) {
-  afficherToast('Code : ' + code);
-  // 1. Chercher dans notre BDD
+  afficherToast('Recherche en cours...');
+  // 1. KazPrix en premier
   const { data: local } = await db.from('produits').select('*').eq('code_barres', code).maybeSingle();
-  if (local) { fermerModal('modal-panier'); await selectionnerProduit(local.id); return; }
+  if (local) { afficherToast('Trouvé dans KazPrix ✓'); fermerModal('modal-panier'); await selectionnerProduit(local.id); return; }
   // 2. OpenFoodFacts
   let prefill = { code_barres: code, nom: '', marque: '' };
+  let trouve = false;
   try {
     const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
     const json = await res.json();
-    if (json.status === 1) {
+    if (json.status === 1 && json.product) {
       const p = json.product;
-      prefill.nom = p.product_name_fr || p.product_name || '';
+      prefill.nom = p.product_name_fr || p.product_name || p.product_name_en || '';
       prefill.marque = p.brands || '';
-      afficherToast('Trouvé sur OpenFoodFacts ✓');
+      trouve = !!prefill.nom;
     }
   } catch(e) {}
+  // 3. Fallback Open Products Facts
+  if (!trouve) {
+    try {
+      const res = await fetch(`https://world.openproductsfacts.org/api/v0/product/${code}.json`);
+      const json = await res.json();
+      if (json.status === 1 && json.product) {
+        const p = json.product;
+        prefill.nom = p.product_name_fr || p.product_name || '';
+        prefill.marque = p.brands || '';
+        trouve = !!prefill.nom;
+      }
+    } catch(e) {}
+  }
+  afficherToast(trouve ? 'Produit trouvé ✓' : 'Code non trouvé — saisissez manuellement');
   fermerModal('modal-panier');
   ouvrirModalProduit(prefill);
-  // Remplir les champs après ouverture
   setTimeout(() => {
     document.getElementById('prod-nom').value = prefill.nom;
     document.getElementById('prod-marque').value = prefill.marque;
