@@ -627,8 +627,8 @@ async function renderProduits() {
   let html = `
     <div class="section-title">Produits <button class="btn-ajouter-sm" onclick="ouvrirModalProduit(null)">+ Ajouter</button></div>
     <div class="search-bar" style="margin-bottom:12px">
-      <input type="text" class="search-input" placeholder="Rechercher par nom, marque, sous-catégorie..." value="${rechercheProduitsQuery}" oninput="filtrerProduits(this.value)" autocomplete="off" />
-      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" placeholder="Rechercher par nom, marque, sous-catégorie..." value="${rechercheProduitsQuery}" onkeydown="if(event.key==='Enter'){filtrerProduits(this.value)}" onblur="filtrerProduits(this.value)" autocomplete="off" />
+      <span class="search-icon" style="cursor:pointer" onclick="filtrerProduits(this.previousElementSibling.value)">🔍</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
       <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gris);cursor:pointer">
