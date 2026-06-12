@@ -104,10 +104,13 @@
     /* HISTORIQUE PRIX */
     .historique-bloc { margin-top: 10px; background: var(--gris-clair); border-radius: var(--radius-sm); padding: 10px 12px; }
     .historique-titre { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gris); margin-bottom: 8px; }
-    .prix-ligne { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 12px; }
-    .prix-ligne:last-child { border-bottom: none; }
+    .prix-bloc-item { padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 12px; }
+    .prix-bloc-item:last-child { border-bottom: none; }
+    .prix-ligne { display: flex; justify-content: space-between; align-items: center; }
     .prix-ligne-gauche { flex: 1; }
     .prix-ligne-magasin { font-weight: 600; color: var(--texte); }
+    .prix-note-input { width: 100%; margin-top: 4px; padding: 6px 9px; border: 1px solid var(--gris-clair); border-radius: 7px; font-family: 'DM Sans', sans-serif; font-size: 11px; background: white; color: var(--texte); }
+    .prix-note-input::placeholder { color: #c4c4c4; font-style: italic; }
     .prix-ligne-date { color: var(--gris); font-size: 11px; }
     .prix-ligne-montant { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--vert); }
     .prix-ligne-montant.promo { color: var(--rouge); }
@@ -674,7 +677,7 @@ function toggleArchives(val) {
 
 async function ouvrirFicheProduit(produitId) {
   const { data: p } = await db.from('produits')
-    .select('*, categories(nom), prix(id, montant, est_promo, date_enregistrement, magasins(nom,ville))')
+    .select('*, categories(nom), prix(id, montant, est_promo, est_obsolete, note, date_enregistrement, magasins(nom,ville))')
     .eq('id', produitId).single();
   if (!p) return;
   // Trier prix par date desc
@@ -914,7 +917,7 @@ let produitEnSelection = null;
 
 async function selectionnerProduit(produitId) {
   const { data: p } = await db.from('produits')
-    .select('*, categories(nom), prix(id, montant, est_promo, date_enregistrement, magasins(nom,ville))')
+    .select('*, categories(nom), prix(id, montant, est_promo, est_obsolete, note, date_enregistrement, magasins(nom,ville))')
     .eq('id', produitId).single();
   if (!p) return;
 
@@ -949,7 +952,7 @@ async function selectionnerProduit(produitId) {
 
 async function selectionnerPrixPourPanier(produitId) {
   const { data: p } = await db.from('produits')
-    .select('*, categories(nom), prix(id, montant, est_promo, date_enregistrement, magasins(nom,ville))')
+    .select('*, categories(nom), prix(id, montant, est_promo, est_obsolete, note, date_enregistrement, magasins(nom,ville))')
     .eq('id', produitId).single();
   if (!p) return;
   produitEnSelection = p;
@@ -1136,22 +1139,26 @@ function ouvrirModalProduit(produit) {
             else variationHtml = `<span style="color:var(--gris);font-size:10px">= stable</span>`;
           }
           const obsoleteStyle = px.est_obsolete ? 'opacity:0.45;text-decoration:line-through' : '';
+          const noteEchap = (px.note || '').replace(/"/g, '&quot;');
           return `
-            <div class="prix-ligne" style="${obsoleteStyle}">
-              <div class="prix-ligne-gauche">
-                <div class="prix-ligne-magasin">${px.magasins?.nom||'?'} – ${px.magasins?.ville||''}</div>
-                <div class="prix-ligne-date">${date} ${variationHtml} ${px.est_obsolete?'<span style="background:var(--gris-clair);color:var(--gris);font-size:9px;padding:1px 5px;border-radius:6px">obsolète</span>':''}</div>
-              </div>
-              <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-                <div><span class="prix-ligne-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} €</span>${px.est_promo?' 🏷️':''}</div>
-                ${estMin ? '<span class="prix-min-tag">💚 MIN</span>' : ''}
-                ${estMax ? '<span style="background:#ffe5e7;color:var(--rouge);font-size:9px;font-weight:700;padding:2px 5px;border-radius:6px">📈 MAX</span>' : ''}
-                <div style="display:flex;gap:4px;margin-top:2px">
-                  <button onclick="modifierPrix('${px.id}','${produit.id}',${px.montant})" style="font-size:11px;padding:3px 8px;border:1px solid var(--gris-clair);border-radius:6px;background:white;cursor:pointer">✏️</button>
-                  <button onclick="toggleObsolete('${px.id}','${produit.id}',${px.est_obsolete})" style="font-size:11px;padding:3px 8px;border:1px solid var(--gris-clair);border-radius:6px;background:white;cursor:pointer">${px.est_obsolete?'↩️':'🚫'}</button>
-                  <button onclick="supprimerPrix('${px.id}','${produit.id}')" style="font-size:11px;padding:3px 8px;border:1px solid #ffd0d3;border-radius:6px;background:white;color:var(--rouge);cursor:pointer">🗑</button>
+            <div class="prix-bloc-item">
+              <div class="prix-ligne" style="${obsoleteStyle}">
+                <div class="prix-ligne-gauche">
+                  <div class="prix-ligne-magasin">${px.magasins?.nom||'?'} – ${px.magasins?.ville||''}</div>
+                  <div class="prix-ligne-date">${date} ${variationHtml} ${px.est_obsolete?'<span style="background:var(--gris-clair);color:var(--gris);font-size:9px;padding:1px 5px;border-radius:6px">obsolète</span>':''}</div>
+                </div>
+                <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+                  <div><span class="prix-ligne-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} €</span>${px.est_promo?' 🏷️':''}</div>
+                  ${estMin ? '<span class="prix-min-tag">💚 MIN</span>' : ''}
+                  ${estMax ? '<span style="background:#ffe5e7;color:var(--rouge);font-size:9px;font-weight:700;padding:2px 5px;border-radius:6px">📈 MAX</span>' : ''}
+                  <div style="display:flex;gap:4px;margin-top:2px">
+                    <button onclick="modifierPrix('${px.id}','${produit.id}',${px.montant})" style="font-size:11px;padding:3px 8px;border:1px solid var(--gris-clair);border-radius:6px;background:white;cursor:pointer">✏️</button>
+                    <button onclick="toggleObsolete('${px.id}','${produit.id}',${px.est_obsolete})" style="font-size:11px;padding:3px 8px;border:1px solid var(--gris-clair);border-radius:6px;background:white;cursor:pointer">${px.est_obsolete?'↩️':'🚫'}</button>
+                    <button onclick="supprimerPrix('${px.id}','${produit.id}')" style="font-size:11px;padding:3px 8px;border:1px solid #ffd0d3;border-radius:6px;background:white;color:var(--rouge);cursor:pointer">🗑</button>
+                  </div>
                 </div>
               </div>
+              <input type="text" class="prix-note-input" placeholder="+ Ajouter une note (ex: format familial, souvent en rupture...)" value="${noteEchap}" onchange="enregistrerNotePrix('${px.id}', this.value)" />
             </div>`;
         }).join('')}
       </div>
@@ -1231,6 +1238,11 @@ async function sauvegarderProduit() {
 }
 
 // ===== ACTIONS PRIX =====
+async function enregistrerNotePrix(prixId, note) {
+  await db.from('prix').update({ note: note.trim() || null }).eq('id', prixId);
+  afficherToast('Note enregistrée ✓');
+}
+
 async function modifierPrix(prixId, produitId, montantActuel) {
   const nouveau = prompt('Nouveau prix (€) :', montantActuel);
   if (!nouveau || isNaN(parseFloat(nouveau))) return;
