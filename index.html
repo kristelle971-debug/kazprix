@@ -1589,9 +1589,37 @@ async function afficherArticleTicket() {
   }
 
   if (produitTrouve) {
+    // Vérifier si ce prix existe déjà pour ce magasin
+    const { data: prixExistant } = await db.from('prix')
+      .select('montant, est_obsolete')
+      .eq('produit_id', produitTrouve.id)
+      .eq('magasin_id', ticketMagasinId)
+      .eq('est_obsolete', false)
+      .order('date_enregistrement', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const prixTicket = art.prix ? parseFloat(art.prix) : null;
+
+    if (prixExistant && prixTicket && Math.abs(prixExistant.montant - prixTicket) < 0.01) {
+      // Prix identique → on passe automatiquement
+      ajouterResultatTicket(produitTrouve.nom, prixTicket, art.est_promo || false, 'inchangé');
+      ticketIndex++;
+      await afficherArticleTicket();
+      return;
+    }
+
     ticketProduitEnCours = produitTrouve;
-    document.getElementById('ticket-produit-trouve-info').innerHTML =
-      `<strong>${produitTrouve.nom}</strong>${produitTrouve.marque?' – '+produitTrouve.marque:''}`;
+    let infoHtml = `<strong>${produitTrouve.nom}</strong>${produitTrouve.marque?' – '+produitTrouve.marque:''}`;
+    if (prixExistant) {
+      infoHtml += `<br><span style="color:var(--gris);font-size:11px">Dernier prix connu : <strong>${prixExistant.montant.toFixed(2).replace('.',',')} €</strong></span>`;
+      if (prixTicket && Math.abs(prixExistant.montant - prixTicket) > 0.01) {
+        const diff = prixTicket - prixExistant.montant;
+        const pct = ((diff / prixExistant.montant) * 100).toFixed(0);
+        infoHtml += ` <span style="color:${diff>0?'var(--rouge)':'var(--vert-accent)'};font-size:11px;font-weight:700">${diff>0?'📈 +':'📉 '}${pct}%</span>`;
+      }
+    }
+    document.getElementById('ticket-produit-trouve-info').innerHTML = infoHtml;
     document.getElementById('ticket-prix-confirme').value = art.prix || '';
     document.getElementById('ticket-promo-confirme').checked = art.est_promo || false;
     document.getElementById('ticket-section-trouve').style.display = 'block';
@@ -1654,12 +1682,15 @@ function ajouterResultatTicket(nom, prix, estPromo, statut) {
   ticketResultats.push({ nom, prix, estPromo, statut });
   const container = document.getElementById('ticket-resultats');
   container.innerHTML = `
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris);margin-bottom:6px">${ticketResultats.length} article(s) enregistré(s)</div>
-    ${ticketResultats.map(r => `
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gris-clair);font-size:12px">
-        <span>${r.nom} <span style="color:var(--gris);font-size:10px">(${r.statut})</span></span>
-        <span style="font-weight:700;color:var(--vert)">${r.prix.toFixed(2).replace('.',',')} €${r.estPromo?' 🏷️':''}</span>
-      </div>`).join('')}`;
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris);margin-bottom:6px">${ticketResultats.length} article(s) traité(s)</div>
+    ${ticketResultats.map(r => {
+      const couleur = r.statut === 'inchangé' ? 'var(--gris)' : r.statut === 'créé' ? 'var(--vert)' : 'var(--vert-accent)';
+      const icone = r.statut === 'inchangé' ? '=' : r.statut === 'créé' ? '✨' : '✓';
+      return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gris-clair);font-size:12px">
+        <span>${r.nom} <span style="color:${couleur};font-size:10px">${icone} ${r.statut}</span></span>
+        <span style="font-weight:700;color:${couleur}">${r.prix.toFixed(2).replace('.',',')} €${r.estPromo?' 🏷️':''}</span>
+      </div>`;
+    }).join('')}`;
 }
 
 function fermerTicket() {
