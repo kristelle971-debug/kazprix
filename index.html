@@ -412,64 +412,94 @@
     </div>
 
     <div id="ticket-scan-section" style="display:none">
-      <div style="background:var(--vert-pale);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;font-size:13px;color:var(--vert-clair)">
-        📷 Placez le code-barres du produit dans le cadre. Scannez article par article depuis votre ticket.
+
+      <!-- ETAPE 1 : PHOTO -->
+      <div id="ticket-etape-photo">
+        <div style="background:var(--vert-pale);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;font-size:13px;color:var(--vert-clair)">
+          📷 Prenez une photo de votre ticket de caisse. Claude va lire automatiquement tous les articles et leurs prix.
+        </div>
+        <div class="photo-upload" id="ticket-photo-zone" onclick="document.getElementById('ticket-photo-input').click()" style="height:120px">
+          <span style="font-size:28px">🧾</span>
+          <span>Appuyer pour prendre une photo du ticket</span>
+          <input type="file" id="ticket-photo-input" accept="image/*" capture="environment" onchange="previewTicketPhoto(this)" />
+        </div>
+        <div id="ticket-photo-preview" style="display:none;margin-top:10px">
+          <img id="ticket-photo-img" style="width:100%;border-radius:var(--radius-sm);max-height:200px;object-fit:cover" />
+          <button class="btn-primary" onclick="analyserTicket()" style="margin-top:10px">🤖 Analyser avec Claude</button>
+          <button class="btn-secondary" onclick="resetTicketPhoto()">Reprendre une photo</button>
+        </div>
+        <div id="ticket-loading" style="display:none;text-align:center;padding:30px">
+          <div class="spinner"></div>
+          <p style="color:var(--gris);font-size:13px;margin-top:8px">Claude analyse votre ticket...</p>
+        </div>
       </div>
-      <button class="btn-scan" onclick="demarrerScanTicket()">📷 Scanner un code-barres</button>
-      <div id="qr-reader-ticket" style="display:none;margin-bottom:12px;border-radius:var(--radius-sm);overflow:hidden"></div>
 
-      <div id="ticket-resultats" style="margin-bottom:12px"></div>
+      <!-- ETAPE 2 : VALIDATION ARTICLE PAR ARTICLE -->
+      <div id="ticket-etape-validation" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px" id="ticket-progression">Article 1 / ?</div>
+          <button onclick="ticket_ignorer()" style="font-size:12px;padding:5px 10px;border:1px solid var(--gris-clair);border-radius:8px;background:white;cursor:pointer">Ignorer →</button>
+        </div>
 
-      <div id="ticket-fiche-rapide" style="display:none">
-        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:12px;padding-top:12px;border-top:1px solid var(--gris-clair)">
-          📦 Nouveau produit détecté
+        <div id="ticket-article-encours" style="background:var(--gris-clair);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px">
+          <div style="font-weight:600;font-size:14px" id="ticket-art-nom"></div>
+          <div style="font-size:11px;color:var(--gris);margin-top:2px" id="ticket-art-code"></div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Nom *</label>
-          <input type="text" class="form-input" id="ticket-prod-nom" placeholder="Nom du produit" />
+
+        <!-- Produit trouvé dans KazPrix -->
+        <div id="ticket-section-trouve" style="display:none">
+          <div style="background:var(--vert-pale);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--vert-clair)">
+            ✅ Produit déjà dans KazPrix
+          </div>
+          <div id="ticket-produit-trouve-info"></div>
+          <div class="form-group" style="margin-top:10px">
+            <label class="form-label">Prix constaté (€)</label>
+            <input type="number" step="0.01" class="form-input" id="ticket-prix-confirme" />
+          </div>
+          <div class="form-checkbox" style="margin-bottom:10px">
+            <input type="checkbox" id="ticket-promo-confirme" />
+            <label for="ticket-promo-confirme">🏷️ Prix en promotion</label>
+          </div>
+          <button class="btn-primary" onclick="confirmerPrixTicket()">✓ Enregistrer</button>
         </div>
-        <div class="form-group">
-          <label class="form-label">Marque</label>
-          <input type="text" class="form-input" id="ticket-prod-marque" placeholder="Marque" />
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Catégorie</label>
-            <select class="form-select" id="ticket-prod-categorie"><option value="">Choisir...</option></select>
+
+        <!-- Nouveau produit -->
+        <div id="ticket-section-nouveau" style="display:none">
+          <div style="background:var(--jaune-pale,#fff8e1);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;font-size:13px;color:#8a6000">
+            📦 Nouveau produit — complétez la fiche
           </div>
           <div class="form-group">
-            <label class="form-label">Sous-catégorie</label>
-            <input type="text" class="form-input" id="ticket-prod-sous-cat" placeholder="Ex: Yaourts" />
+            <label class="form-label">Nom *</label>
+            <input type="text" class="form-input" id="ticket-prod-nom" />
           </div>
+          <div class="form-group">
+            <label class="form-label">Marque</label>
+            <input type="text" class="form-input" id="ticket-prod-marque" placeholder="Marque" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Catégorie</label>
+              <select class="form-select" id="ticket-prod-categorie"><option value="">Choisir...</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sous-catégorie</label>
+              <input type="text" class="form-input" id="ticket-prod-sous-cat" placeholder="Ex: Yaourts" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prix (€) *</label>
+            <input type="number" step="0.01" class="form-input" id="ticket-prod-prix" />
+          </div>
+          <div class="form-checkbox" style="margin-bottom:10px">
+            <input type="checkbox" id="ticket-prod-promo" />
+            <label for="ticket-prod-promo">🏷️ Prix en promotion</label>
+          </div>
+          <button class="btn-primary" onclick="validerFicheRapide()">✓ Enregistrer</button>
         </div>
-        <div class="form-group">
-          <label class="form-label">Prix (€) *</label>
-          <input type="number" step="0.01" class="form-input" id="ticket-prod-prix" placeholder="0,00" />
-        </div>
-        <div class="form-checkbox" style="margin-bottom:12px">
-          <input type="checkbox" id="ticket-prod-promo" />
-          <label for="ticket-prod-promo">🏷️ Prix en promotion</label>
-        </div>
-        <button class="btn-primary" onclick="validerFicheRapide()">✓ Enregistrer et continuer</button>
-        <button class="btn-secondary" onclick="ignorerProduitTicket()">Ignorer cet article</button>
       </div>
 
-      <div id="ticket-confirmer-prix" style="display:none">
-        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:12px;padding-top:12px;border-top:1px solid var(--gris-clair)">
-          ✅ Produit trouvé — confirmer le prix
-        </div>
-        <div id="ticket-produit-trouve-info" style="background:var(--vert-pale);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px;font-size:13px"></div>
-        <div class="form-group">
-          <label class="form-label">Prix constaté (€) *</label>
-          <input type="number" step="0.01" class="form-input" id="ticket-prix-confirme" placeholder="0,00" />
-        </div>
-        <div class="form-checkbox" style="margin-bottom:12px">
-          <input type="checkbox" id="ticket-promo-confirme" />
-          <label for="ticket-promo-confirme">🏷️ Prix en promotion</label>
-        </div>
-        <button class="btn-primary" onclick="confirmerPrixTicket()">✓ Enregistrer et continuer</button>
-        <button class="btn-secondary" onclick="ignorerProduitTicket()">Ignorer cet article</button>
-      </div>
+      <!-- RESULTATS -->
+      <div id="ticket-resultats" style="margin-top:12px"></div>
     </div>
 
     <button class="btn-secondary" onclick="fermerTicket()">Terminer</button>
@@ -1387,16 +1417,27 @@ let ticketMagasinNom = null;
 let ticketScannerInstance = null;
 let ticketProduitEnCours = null;
 let ticketResultats = [];
+let ticketArticles = []; // articles extraits par Claude
+let ticketIndex = 0;
+let ticketPhotoBase64 = null;
 
 function ouvrirTicketCaisse(magId, magNom) {
   ticketMagasinId = magId || null;
   ticketMagasinNom = magNom || null;
   ticketResultats = [];
+  ticketArticles = [];
+  ticketIndex = 0;
+  ticketPhotoBase64 = null;
+
   document.getElementById('ticket-resultats').innerHTML = '';
-  document.getElementById('ticket-fiche-rapide').style.display = 'none';
-  document.getElementById('ticket-confirmer-prix').style.display = 'none';
+  document.getElementById('ticket-etape-photo').style.display = 'block';
+  document.getElementById('ticket-etape-validation').style.display = 'none';
+  document.getElementById('ticket-photo-preview').style.display = 'none';
+  document.getElementById('ticket-loading').style.display = 'none';
   document.getElementById('ticket-nouveau-magasin').style.display = 'none';
-  document.getElementById('qr-reader-ticket').style.display = 'none';
+
+  const zone = document.getElementById('ticket-photo-zone');
+  zone.style.display = 'flex';
 
   // Remplir select magasins
   const sel = document.getElementById('ticket-magasin');
@@ -1409,7 +1450,7 @@ function ouvrirTicketCaisse(magId, magNom) {
     document.getElementById('ticket-scan-section').style.display = 'none';
   }
 
-  // Remplir select catégories fiche rapide
+  // Remplir catégories
   const selCat = document.getElementById('ticket-prod-categorie');
   selCat.innerHTML = '<option value="">Choisir...</option>';
   categories.forEach(c => selCat.innerHTML += `<option value="${c.id}">${c.nom}</option>`);
@@ -1447,95 +1488,123 @@ async function creerMagasinDepuisTicket() {
   }
 }
 
-function demarrerScanTicket() {
-  const container = document.getElementById('qr-reader-ticket');
-  container.style.display = 'block';
-  if (ticketScannerInstance) return;
-  ticketScannerInstance = new Html5Qrcode('qr-reader-ticket');
-  ticketScannerInstance.start(
-    { facingMode: 'environment' },
-    { fps: 10, qrbox: { width: 250, height: 120 } },
-    async (code) => {
-      arreterScanTicket();
-      await traiterCodeTicket(code);
-    },
-    () => {}
-  ).catch(() => { afficherToast('Caméra non disponible'); arreterScanTicket(); });
+function previewTicketPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    const base64 = e.target.result;
+    ticketPhotoBase64 = base64.split(',')[1];
+    document.getElementById('ticket-photo-img').src = base64;
+    document.getElementById('ticket-photo-zone').style.display = 'none';
+    document.getElementById('ticket-photo-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
 }
 
-function arreterScanTicket() {
-  if (ticketScannerInstance) { ticketScannerInstance.stop().catch(()=>{}); ticketScannerInstance = null; }
-  document.getElementById('qr-reader-ticket').style.display = 'none';
+function resetTicketPhoto() {
+  ticketPhotoBase64 = null;
+  document.getElementById('ticket-photo-zone').style.display = 'flex';
+  document.getElementById('ticket-photo-preview').style.display = 'none';
+  document.getElementById('ticket-photo-input').value = '';
 }
 
-async function traiterCodeTicket(code) {
-  afficherToast('Recherche...');
-  document.getElementById('ticket-fiche-rapide').style.display = 'none';
-  document.getElementById('ticket-confirmer-prix').style.display = 'none';
+async function analyserTicket() {
+  if (!ticketPhotoBase64) { afficherToast('Photo requise'); return; }
+  if (!ticketMagasinId) { afficherToast('Choisissez un magasin d\'abord'); return; }
 
-  // 1. KazPrix par code-barres
-  const { data: local } = await db.from('produits').select('*').eq('code_barres', code).maybeSingle();
-  if (local) {
-    ticketProduitEnCours = local;
-    afficherConfirmerPrix(local, code);
+  document.getElementById('ticket-photo-preview').style.display = 'none';
+  document.getElementById('ticket-loading').style.display = 'block';
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/ticket-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+      },
+      body: JSON.stringify({
+        image_base64: ticketPhotoBase64,
+        media_type: 'image/jpeg'
+      })
+    });
+
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch(e) {
+      // Parfois Claude entoure le JSON de backticks
+      const match = text.match(/\{[\s\S]*\}/);
+      data = match ? JSON.parse(match[0]) : null;
+    }
+
+    document.getElementById('ticket-loading').style.display = 'none';
+
+    if (!data?.articles?.length) {
+      afficherToast('Aucun article détecté — réessayez');
+      document.getElementById('ticket-photo-zone').style.display = 'flex';
+      return;
+    }
+
+    ticketArticles = data.articles;
+    ticketIndex = 0;
+    afficherToast(`${ticketArticles.length} articles détectés ✓`);
+    document.getElementById('ticket-etape-photo').style.display = 'none';
+    document.getElementById('ticket-etape-validation').style.display = 'block';
+    await afficherArticleTicket();
+
+  } catch(err) {
+    document.getElementById('ticket-loading').style.display = 'none';
+    document.getElementById('ticket-photo-zone').style.display = 'flex';
+    afficherToast('Erreur lors de l\'analyse — réessayez');
+    console.error(err);
+  }
+}
+
+async function afficherArticleTicket() {
+  if (ticketIndex >= ticketArticles.length) {
+    // Terminé
+    document.getElementById('ticket-etape-validation').style.display = 'none';
+    afficherToast(`✓ Ticket traité — ${ticketResultats.length} articles enregistrés`);
     return;
   }
 
-  // 2. OpenFoodFacts
-  let prefill = { code_barres: code, nom: '', marque: '' };
-  let trouve = false;
-  try {
-    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
-    const json = await res.json();
-    if (json.status === 1 && json.product) {
-      const p = json.product;
-      prefill.nom = p.product_name_fr || p.product_name || p.product_name_en || '';
-      prefill.marque = p.brands || '';
-      trouve = !!prefill.nom;
-    }
-  } catch(e) {}
+  const art = ticketArticles[ticketIndex];
+  document.getElementById('ticket-progression').textContent = `Article ${ticketIndex + 1} / ${ticketArticles.length}`;
+  document.getElementById('ticket-art-nom').textContent = art.nom || 'Article inconnu';
+  document.getElementById('ticket-art-code').textContent = art.code_barres ? `Code : ${art.code_barres}` : '';
+  document.getElementById('ticket-section-trouve').style.display = 'none';
+  document.getElementById('ticket-section-nouveau').style.display = 'none';
 
-  if (!trouve) {
-    try {
-      const res = await fetch(`https://world.openproductsfacts.org/api/v0/product/${code}.json`);
-      const json = await res.json();
-      if (json.status === 1 && json.product) {
-        const p = json.product;
-        prefill.nom = p.product_name_fr || p.product_name || '';
-        prefill.marque = p.brands || '';
-        trouve = !!prefill.nom;
-      }
-    } catch(e) {}
+  // Chercher dans KazPrix
+  let produitTrouve = null;
+  if (art.code_barres) {
+    const { data } = await db.from('produits').select('*').eq('code_barres', art.code_barres).maybeSingle();
+    produitTrouve = data;
+  }
+  if (!produitTrouve && art.nom) {
+    const { data } = await db.from('produits').select('*').ilike('nom', `%${art.nom.split(' ')[0]}%`).maybeSingle();
+    produitTrouve = data;
   }
 
-  // 3. Vérifier par nom dans KazPrix
-  if (trouve && prefill.nom) {
-    const { data: existantNom } = await db.from('produits').select('*').ilike('nom', prefill.nom.trim()).maybeSingle();
-    if (existantNom) {
-      if (!existantNom.code_barres) await db.from('produits').update({ code_barres: code }).eq('id', existantNom.id);
-      ticketProduitEnCours = existantNom;
-      afficherConfirmerPrix(existantNom, code);
-      return;
-    }
+  if (produitTrouve) {
+    ticketProduitEnCours = produitTrouve;
+    document.getElementById('ticket-produit-trouve-info').innerHTML =
+      `<strong>${produitTrouve.nom}</strong>${produitTrouve.marque?' – '+produitTrouve.marque:''}`;
+    document.getElementById('ticket-prix-confirme').value = art.prix || '';
+    document.getElementById('ticket-promo-confirme').checked = art.est_promo || false;
+    document.getElementById('ticket-section-trouve').style.display = 'block';
+  } else {
+    ticketProduitEnCours = null;
+    document.getElementById('ticket-prod-nom').value = art.nom || '';
+    document.getElementById('ticket-prod-marque').value = '';
+    document.getElementById('ticket-prod-prix').value = art.prix || '';
+    document.getElementById('ticket-prod-promo').checked = art.est_promo || false;
+    document.getElementById('ticket-prod-sous-cat').value = '';
+    document.getElementById('ticket-prod-categorie').value = '';
+    document.getElementById('ticket-section-nouveau').style.display = 'block';
   }
-
-  // 4. Nouveau produit → fiche rapide
-  ticketProduitEnCours = null;
-  document.getElementById('ticket-prod-nom').value = prefill.nom;
-  document.getElementById('ticket-prod-marque').value = prefill.marque;
-  document.getElementById('ticket-prod-prix').value = '';
-  document.getElementById('ticket-prod-promo').checked = false;
-  document.getElementById('ticket-fiche-rapide').style.display = 'block';
-  document.getElementById('ticket-fiche-rapide').dataset.codeBarres = code;
-}
-
-function afficherConfirmerPrix(produit, code) {
-  document.getElementById('ticket-produit-trouve-info').innerHTML = `
-    <strong>${produit.nom}</strong>${produit.marque ? ' – ' + produit.marque : ''}<br>
-    <span style="color:var(--gris)">Code : ${code}</span>`;
-  document.getElementById('ticket-prix-confirme').value = '';
-  document.getElementById('ticket-promo-confirme').checked = false;
-  document.getElementById('ticket-confirmer-prix').style.display = 'block';
 }
 
 async function confirmerPrixTicket() {
@@ -1544,9 +1613,8 @@ async function confirmerPrixTicket() {
   const estPromo = document.getElementById('ticket-promo-confirme').checked;
   await db.from('prix').insert({ produit_id: ticketProduitEnCours.id, magasin_id: ticketMagasinId, montant: prix, est_promo: estPromo });
   ajouterResultatTicket(ticketProduitEnCours.nom, prix, estPromo, 'mis à jour');
-  document.getElementById('ticket-confirmer-prix').style.display = 'none';
-  ticketProduitEnCours = null;
-  afficherToast('Prix enregistré ✓ — scanner le suivant');
+  ticketIndex++;
+  await afficherArticleTicket();
 }
 
 async function validerFicheRapide() {
@@ -1555,7 +1623,7 @@ async function validerFicheRapide() {
   const catId = document.getElementById('ticket-prod-categorie').value;
   if (!nom || !prix) { afficherToast('Nom et prix requis'); return; }
 
-  const codeBarres = document.getElementById('ticket-fiche-rapide').dataset.codeBarres;
+  const art = ticketArticles[ticketIndex];
   const estPromo = document.getElementById('ticket-prod-promo').checked;
 
   const { data: newProd } = await db.from('produits').insert({
@@ -1563,22 +1631,24 @@ async function validerFicheRapide() {
     marque: document.getElementById('ticket-prod-marque').value.trim() || null,
     categorie_id: catId || null,
     sous_categorie: document.getElementById('ticket-prod-sous-cat').value.trim() || null,
-    code_barres: codeBarres || null,
+    code_barres: art?.code_barres || null,
   }).select().single();
 
   if (newProd) {
     await db.from('prix').insert({ produit_id: newProd.id, magasin_id: ticketMagasinId, montant: prix, est_promo: estPromo });
     ajouterResultatTicket(nom, prix, estPromo, 'créé');
   }
-  document.getElementById('ticket-fiche-rapide').style.display = 'none';
-  afficherToast('Produit créé ✓ — scanner le suivant');
+  ticketIndex++;
+  await afficherArticleTicket();
 }
 
-function ignorerProduitTicket() {
-  document.getElementById('ticket-fiche-rapide').style.display = 'none';
-  document.getElementById('ticket-confirmer-prix').style.display = 'none';
+function ticket_ignorer() {
   ticketProduitEnCours = null;
+  ticketIndex++;
+  afficherArticleTicket();
 }
+
+function ignorerProduitTicket() { ticket_ignorer(); }
 
 function ajouterResultatTicket(nom, prix, estPromo, statut) {
   ticketResultats.push({ nom, prix, estPromo, statut });
@@ -1593,11 +1663,12 @@ function ajouterResultatTicket(nom, prix, estPromo, statut) {
 }
 
 function fermerTicket() {
-  arreterScanTicket();
   fermerModal('modal-ticket');
   if (ticketResultats.length > 0) afficherToast(`${ticketResultats.length} article(s) enregistré(s) ✓`);
   ticketResultats = [];
   ticketProduitEnCours = null;
+  ticketArticles = [];
+  ticketIndex = 0;
 }
 
 // ===== SCANNER =====
