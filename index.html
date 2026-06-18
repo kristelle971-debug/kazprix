@@ -1019,6 +1019,7 @@ function afficherChoixPrix(p) {
           <div class="prix-choix-magasin">🏪 ${px.magasins?.nom || '?'}</div>
           <div class="prix-choix-ville">📍 ${px.magasins?.ville || ''}</div>
           ${estMin ? '<span class="prix-choix-min">💚 Le moins cher</span>' : ''}
+          ${px.note ? `<div style="font-size:11px;color:var(--gris);font-style:italic;margin-top:3px">📝 ${px.note}</div>` : ''}
         </div>
         <div style="text-align:right">
           <div class="prix-choix-montant ${px.est_promo?'promo':''}">${px.montant.toFixed(2).replace('.',',')} €${px.est_promo?' 🏷️':''}</div>
@@ -1292,9 +1293,15 @@ function arreterScanner() {
 }
 async function rechercherParCodeBarres(code) {
   afficherToast('Recherche en cours...');
-  // 1. KazPrix en premier
+  // 1. KazPrix par code-barres
   const { data: local } = await db.from('produits').select('*').eq('code_barres', code).maybeSingle();
-  if (local) { afficherToast('Trouvé dans KazPrix ✓'); fermerModal('modal-panier'); await selectionnerProduit(local.id); return; }
+  if (local) {
+    afficherToast('Trouvé dans KazPrix ✓');
+    fermerModal('modal-panier');
+    await selectionnerProduit(local.id);
+    return;
+  }
+
   // 2. OpenFoodFacts
   let prefill = { code_barres: code, nom: '', marque: '' };
   let trouve = false;
@@ -1308,6 +1315,7 @@ async function rechercherParCodeBarres(code) {
       trouve = !!prefill.nom;
     }
   } catch(e) {}
+
   // 3. Fallback Open Products Facts
   if (!trouve) {
     try {
@@ -1321,7 +1329,27 @@ async function rechercherParCodeBarres(code) {
       }
     } catch(e) {}
   }
-  afficherToast(trouve ? 'Produit trouvé ✓' : 'Code non trouvé — saisissez manuellement');
+
+  // 4. Si trouvé sur OpenFoodFacts, vérifier si un produit avec ce nom existe déjà dans KazPrix
+  if (trouve && prefill.nom) {
+    const { data: existantParNom } = await db.from('produits')
+      .select('*')
+      .ilike('nom', prefill.nom.trim())
+      .maybeSingle();
+    if (existantParNom) {
+      // Produit existant trouvé — on met à jour le code-barres si manquant et on l'ouvre
+      if (!existantParNom.code_barres) {
+        await db.from('produits').update({ code_barres: code }).eq('id', existantParNom.id);
+      }
+      afficherToast('Produit existant trouvé ✓');
+      fermerModal('modal-panier');
+      await selectionnerProduit(existantParNom.id);
+      return;
+    }
+  }
+
+  // 5. Vraiment nouveau produit → ouvrir la fiche de création
+  afficherToast(trouve ? 'Nouveau produit — complétez la fiche' : 'Code non trouvé — saisissez manuellement');
   fermerModal('modal-panier');
   ouvrirModalProduit(prefill);
   setTimeout(() => {
