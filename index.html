@@ -384,6 +384,98 @@
   </div>
 </div>
 
+<!-- MODAL TICKET DE CAISSE -->
+<div class="modal-overlay" id="modal-ticket">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🧾 Scanner un ticket de caisse</div>
+
+    <div class="form-group">
+      <label class="form-label">Magasin *</label>
+      <select class="form-select" id="ticket-magasin" onchange="verifierNouveauMagasin(this.value)">
+        <option value="">Choisir un magasin...</option>
+        <option value="__nouveau__">+ Créer un nouveau magasin</option>
+      </select>
+    </div>
+    <div id="ticket-nouveau-magasin" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nom du magasin</label>
+          <input type="text" class="form-input" id="ticket-mag-nom" placeholder="Ex: Leader Price" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ville</label>
+          <input type="text" class="form-input" id="ticket-mag-ville" placeholder="Ex: Pointe-à-Pitre" />
+        </div>
+      </div>
+      <button class="btn-outline-vert" onclick="creerMagasinDepuisTicket()" style="margin-bottom:12px">✓ Créer ce magasin</button>
+    </div>
+
+    <div id="ticket-scan-section" style="display:none">
+      <div style="background:var(--vert-pale);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;font-size:13px;color:var(--vert-clair)">
+        📷 Placez le code-barres du produit dans le cadre. Scannez article par article depuis votre ticket.
+      </div>
+      <button class="btn-scan" onclick="demarrerScanTicket()">📷 Scanner un code-barres</button>
+      <div id="qr-reader-ticket" style="display:none;margin-bottom:12px;border-radius:var(--radius-sm);overflow:hidden"></div>
+
+      <div id="ticket-resultats" style="margin-bottom:12px"></div>
+
+      <div id="ticket-fiche-rapide" style="display:none">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:12px;padding-top:12px;border-top:1px solid var(--gris-clair)">
+          📦 Nouveau produit détecté
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom *</label>
+          <input type="text" class="form-input" id="ticket-prod-nom" placeholder="Nom du produit" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Marque</label>
+          <input type="text" class="form-input" id="ticket-prod-marque" placeholder="Marque" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Catégorie</label>
+            <select class="form-select" id="ticket-prod-categorie"><option value="">Choisir...</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sous-catégorie</label>
+            <input type="text" class="form-input" id="ticket-prod-sous-cat" placeholder="Ex: Yaourts" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prix (€) *</label>
+          <input type="number" step="0.01" class="form-input" id="ticket-prod-prix" placeholder="0,00" />
+        </div>
+        <div class="form-checkbox" style="margin-bottom:12px">
+          <input type="checkbox" id="ticket-prod-promo" />
+          <label for="ticket-prod-promo">🏷️ Prix en promotion</label>
+        </div>
+        <button class="btn-primary" onclick="validerFicheRapide()">✓ Enregistrer et continuer</button>
+        <button class="btn-secondary" onclick="ignorerProduitTicket()">Ignorer cet article</button>
+      </div>
+
+      <div id="ticket-confirmer-prix" style="display:none">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:12px;padding-top:12px;border-top:1px solid var(--gris-clair)">
+          ✅ Produit trouvé — confirmer le prix
+        </div>
+        <div id="ticket-produit-trouve-info" style="background:var(--vert-pale);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px;font-size:13px"></div>
+        <div class="form-group">
+          <label class="form-label">Prix constaté (€) *</label>
+          <input type="number" step="0.01" class="form-input" id="ticket-prix-confirme" placeholder="0,00" />
+        </div>
+        <div class="form-checkbox" style="margin-bottom:12px">
+          <input type="checkbox" id="ticket-promo-confirme" />
+          <label for="ticket-promo-confirme">🏷️ Prix en promotion</label>
+        </div>
+        <button class="btn-primary" onclick="confirmerPrixTicket()">✓ Enregistrer et continuer</button>
+        <button class="btn-secondary" onclick="ignorerProduitTicket()">Ignorer cet article</button>
+      </div>
+    </div>
+
+    <button class="btn-secondary" onclick="fermerTicket()">Terminer</button>
+  </div>
+</div>
+
 <!-- MODAL MAGASIN -->
 <div class="modal-overlay" id="modal-magasin">
   <div class="modal">
@@ -726,7 +818,8 @@ async function renderMagasins() {
   const counts = {};
   prixData?.forEach(p => { counts[p.magasin_id] = (counts[p.magasin_id]||0)+1; });
 
-  let html = `<div class="section-title">Magasins <button class="btn-ajouter-sm" onclick="ouvrirModalMagasin()">+ Ajouter</button></div>`;
+  let html = `<div class="section-title">Magasins <button class="btn-ajouter-sm" onclick="ouvrirModalMagasin()">+ Ajouter</button></div>
+  <button class="btn-scan" onclick="ouvrirTicketCaisse()" style="margin-bottom:16px">🧾 Scanner un ticket de caisse</button>`;
   if (!mags?.length) {
     html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun magasin</p>';
   } else {
@@ -754,17 +847,15 @@ async function voirProduitsMagasin(magId, magNom, magVille) {
   const main = document.getElementById('main-content');
   main.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
 
-  // Récupérer tous les prix pour ce magasin avec les produits
   const { data: prixData } = await db.from('prix')
-    .select('montant, est_promo, date_enregistrement, produits(id, nom, marque, categorie_id, format, contenance, unite, categories(nom))')
+    .select('montant, est_promo, est_obsolete, date_enregistrement, produits(id, nom, marque, categorie_id, format, contenance, unite, est_archive, categories(nom))')
     .eq('magasin_id', magId)
     .order('date_enregistrement', { ascending: false });
 
-  // Grouper par catégorie (meilleur prix par produit)
   const produitsMap = {};
   prixData?.forEach(px => {
     const p = px.produits;
-    if (!p) return;
+    if (!p || p.est_archive || px.est_obsolete) return;
     if (!produitsMap[p.id]) {
       produitsMap[p.id] = { ...p, meilleurPrix: px.montant, est_promo: px.est_promo, date: px.date_enregistrement };
     }
@@ -779,7 +870,10 @@ async function voirProduitsMagasin(magId, magNom, magVille) {
 
   let html = `
     <div class="back-btn" onclick="renderMagasins()">‹ Retour</div>
-    <div class="section-title" style="font-size:16px">🏪 ${magNom} <span style="font-size:12px;font-weight:400;color:var(--gris)">– ${magVille}</span></div>`;
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px">🏪 ${magNom} <span style="font-size:12px;font-weight:400;color:var(--gris)">– ${magVille}</span></div>
+      <button class="btn-ajouter-sm" onclick="ouvrirTicketCaisse('${magId}','${magNom.replace(/'/g,"\\'")}')">🧾 Ticket</button>
+    </div>`;
 
   if (!Object.keys(parCat).length) {
     html += '<p style="color:var(--gris);text-align:center;padding:40px">Aucun produit enregistré dans ce magasin</p>';
@@ -1166,6 +1260,9 @@ function ouvrirModalProduit(produit) {
       <button class="btn-outline-vert" style="margin-top:8px" onclick="selectionnerPrixPourPanier('${produit.id}')">🛒 Choisir le prix pour le panier</button>
       <button onclick="archiverProduit('${produit.id}',${produit.est_archive})" style="width:100%;margin-top:6px;padding:11px;background:white;border:1.5px solid var(--gris-clair);border-radius:var(--radius);font-size:14px;cursor:pointer;color:var(--gris)">
         ${produit.est_archive ? '↩️ Désarchiver le produit' : '📦 Archiver le produit'}
+      </button>
+      <button onclick="supprimerProduit('${produit.id}')" style="width:100%;margin-top:6px;padding:11px;background:white;border:1.5px solid #ffd0d3;border-radius:var(--radius);font-size:14px;cursor:pointer;color:var(--rouge)">
+        🗑 Supprimer définitivement
       </button>`;
   } else {
     histBloc.style.display = 'block';
@@ -1272,6 +1369,235 @@ async function archiverProduit(produitId, estArchive) {
   afficherToast(estArchive ? 'Produit désarchivé ✓' : 'Produit archivé ✓');
   fermerModal('modal-produit');
   if (vueActuelle === 'produits') renderProduits();
+}
+
+async function supprimerProduit(produitId) {
+  if (!confirm('Supprimer définitivement ce produit et tous ses prix ? Cette action est irréversible.')) return;
+  await db.from('prix').delete().eq('produit_id', produitId);
+  await db.from('produits').delete().eq('id', produitId);
+  afficherToast('Produit supprimé ✓');
+  fermerModal('modal-produit');
+  if (vueActuelle === 'produits') renderProduits();
+  else changerVue('panier');
+}
+
+// ===== TICKET DE CAISSE =====
+let ticketMagasinId = null;
+let ticketMagasinNom = null;
+let ticketScannerInstance = null;
+let ticketProduitEnCours = null;
+let ticketResultats = [];
+
+function ouvrirTicketCaisse(magId, magNom) {
+  ticketMagasinId = magId || null;
+  ticketMagasinNom = magNom || null;
+  ticketResultats = [];
+  document.getElementById('ticket-resultats').innerHTML = '';
+  document.getElementById('ticket-fiche-rapide').style.display = 'none';
+  document.getElementById('ticket-confirmer-prix').style.display = 'none';
+  document.getElementById('ticket-nouveau-magasin').style.display = 'none';
+  document.getElementById('qr-reader-ticket').style.display = 'none';
+
+  // Remplir select magasins
+  const sel = document.getElementById('ticket-magasin');
+  sel.innerHTML = '<option value="">Choisir un magasin...</option><option value="__nouveau__">+ Créer un nouveau magasin</option>';
+  magasins.forEach(m => sel.innerHTML += `<option value="${m.id}">${m.nom} – ${m.ville}</option>`);
+  if (magId) {
+    sel.value = magId;
+    document.getElementById('ticket-scan-section').style.display = 'block';
+  } else {
+    document.getElementById('ticket-scan-section').style.display = 'none';
+  }
+
+  // Remplir select catégories fiche rapide
+  const selCat = document.getElementById('ticket-prod-categorie');
+  selCat.innerHTML = '<option value="">Choisir...</option>';
+  categories.forEach(c => selCat.innerHTML += `<option value="${c.id}">${c.nom}</option>`);
+
+  document.getElementById('modal-ticket').classList.add('open');
+}
+
+function verifierNouveauMagasin(val) {
+  if (val === '__nouveau__') {
+    document.getElementById('ticket-nouveau-magasin').style.display = 'block';
+    document.getElementById('ticket-scan-section').style.display = 'none';
+  } else if (val) {
+    ticketMagasinId = val;
+    ticketMagasinNom = magasins.find(m=>m.id===val)?.nom || '';
+    document.getElementById('ticket-nouveau-magasin').style.display = 'none';
+    document.getElementById('ticket-scan-section').style.display = 'block';
+  } else {
+    document.getElementById('ticket-nouveau-magasin').style.display = 'none';
+    document.getElementById('ticket-scan-section').style.display = 'none';
+  }
+}
+
+async function creerMagasinDepuisTicket() {
+  const nom = document.getElementById('ticket-mag-nom').value.trim();
+  const ville = document.getElementById('ticket-mag-ville').value.trim();
+  if (!nom || !ville) { afficherToast('Nom et ville requis'); return; }
+  const { data } = await db.from('magasins').insert({nom,ville}).select().single();
+  if (data) {
+    ticketMagasinId = data.id;
+    ticketMagasinNom = data.nom;
+    await chargerMagasins();
+    document.getElementById('ticket-nouveau-magasin').style.display = 'none';
+    document.getElementById('ticket-scan-section').style.display = 'block';
+    afficherToast('Magasin créé ✓');
+  }
+}
+
+function demarrerScanTicket() {
+  const container = document.getElementById('qr-reader-ticket');
+  container.style.display = 'block';
+  if (ticketScannerInstance) return;
+  ticketScannerInstance = new Html5Qrcode('qr-reader-ticket');
+  ticketScannerInstance.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 120 } },
+    async (code) => {
+      arreterScanTicket();
+      await traiterCodeTicket(code);
+    },
+    () => {}
+  ).catch(() => { afficherToast('Caméra non disponible'); arreterScanTicket(); });
+}
+
+function arreterScanTicket() {
+  if (ticketScannerInstance) { ticketScannerInstance.stop().catch(()=>{}); ticketScannerInstance = null; }
+  document.getElementById('qr-reader-ticket').style.display = 'none';
+}
+
+async function traiterCodeTicket(code) {
+  afficherToast('Recherche...');
+  document.getElementById('ticket-fiche-rapide').style.display = 'none';
+  document.getElementById('ticket-confirmer-prix').style.display = 'none';
+
+  // 1. KazPrix par code-barres
+  const { data: local } = await db.from('produits').select('*').eq('code_barres', code).maybeSingle();
+  if (local) {
+    ticketProduitEnCours = local;
+    afficherConfirmerPrix(local, code);
+    return;
+  }
+
+  // 2. OpenFoodFacts
+  let prefill = { code_barres: code, nom: '', marque: '' };
+  let trouve = false;
+  try {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+    const json = await res.json();
+    if (json.status === 1 && json.product) {
+      const p = json.product;
+      prefill.nom = p.product_name_fr || p.product_name || p.product_name_en || '';
+      prefill.marque = p.brands || '';
+      trouve = !!prefill.nom;
+    }
+  } catch(e) {}
+
+  if (!trouve) {
+    try {
+      const res = await fetch(`https://world.openproductsfacts.org/api/v0/product/${code}.json`);
+      const json = await res.json();
+      if (json.status === 1 && json.product) {
+        const p = json.product;
+        prefill.nom = p.product_name_fr || p.product_name || '';
+        prefill.marque = p.brands || '';
+        trouve = !!prefill.nom;
+      }
+    } catch(e) {}
+  }
+
+  // 3. Vérifier par nom dans KazPrix
+  if (trouve && prefill.nom) {
+    const { data: existantNom } = await db.from('produits').select('*').ilike('nom', prefill.nom.trim()).maybeSingle();
+    if (existantNom) {
+      if (!existantNom.code_barres) await db.from('produits').update({ code_barres: code }).eq('id', existantNom.id);
+      ticketProduitEnCours = existantNom;
+      afficherConfirmerPrix(existantNom, code);
+      return;
+    }
+  }
+
+  // 4. Nouveau produit → fiche rapide
+  ticketProduitEnCours = null;
+  document.getElementById('ticket-prod-nom').value = prefill.nom;
+  document.getElementById('ticket-prod-marque').value = prefill.marque;
+  document.getElementById('ticket-prod-prix').value = '';
+  document.getElementById('ticket-prod-promo').checked = false;
+  document.getElementById('ticket-fiche-rapide').style.display = 'block';
+  document.getElementById('ticket-fiche-rapide').dataset.codeBarres = code;
+}
+
+function afficherConfirmerPrix(produit, code) {
+  document.getElementById('ticket-produit-trouve-info').innerHTML = `
+    <strong>${produit.nom}</strong>${produit.marque ? ' – ' + produit.marque : ''}<br>
+    <span style="color:var(--gris)">Code : ${code}</span>`;
+  document.getElementById('ticket-prix-confirme').value = '';
+  document.getElementById('ticket-promo-confirme').checked = false;
+  document.getElementById('ticket-confirmer-prix').style.display = 'block';
+}
+
+async function confirmerPrixTicket() {
+  const prix = parseFloat(document.getElementById('ticket-prix-confirme').value);
+  if (!prix || !ticketProduitEnCours || !ticketMagasinId) { afficherToast('Prix requis'); return; }
+  const estPromo = document.getElementById('ticket-promo-confirme').checked;
+  await db.from('prix').insert({ produit_id: ticketProduitEnCours.id, magasin_id: ticketMagasinId, montant: prix, est_promo: estPromo });
+  ajouterResultatTicket(ticketProduitEnCours.nom, prix, estPromo, 'mis à jour');
+  document.getElementById('ticket-confirmer-prix').style.display = 'none';
+  ticketProduitEnCours = null;
+  afficherToast('Prix enregistré ✓ — scanner le suivant');
+}
+
+async function validerFicheRapide() {
+  const nom = document.getElementById('ticket-prod-nom').value.trim();
+  const prix = parseFloat(document.getElementById('ticket-prod-prix').value);
+  const catId = document.getElementById('ticket-prod-categorie').value;
+  if (!nom || !prix) { afficherToast('Nom et prix requis'); return; }
+
+  const codeBarres = document.getElementById('ticket-fiche-rapide').dataset.codeBarres;
+  const estPromo = document.getElementById('ticket-prod-promo').checked;
+
+  const { data: newProd } = await db.from('produits').insert({
+    nom,
+    marque: document.getElementById('ticket-prod-marque').value.trim() || null,
+    categorie_id: catId || null,
+    sous_categorie: document.getElementById('ticket-prod-sous-cat').value.trim() || null,
+    code_barres: codeBarres || null,
+  }).select().single();
+
+  if (newProd) {
+    await db.from('prix').insert({ produit_id: newProd.id, magasin_id: ticketMagasinId, montant: prix, est_promo: estPromo });
+    ajouterResultatTicket(nom, prix, estPromo, 'créé');
+  }
+  document.getElementById('ticket-fiche-rapide').style.display = 'none';
+  afficherToast('Produit créé ✓ — scanner le suivant');
+}
+
+function ignorerProduitTicket() {
+  document.getElementById('ticket-fiche-rapide').style.display = 'none';
+  document.getElementById('ticket-confirmer-prix').style.display = 'none';
+  ticketProduitEnCours = null;
+}
+
+function ajouterResultatTicket(nom, prix, estPromo, statut) {
+  ticketResultats.push({ nom, prix, estPromo, statut });
+  const container = document.getElementById('ticket-resultats');
+  container.innerHTML = `
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris);margin-bottom:6px">${ticketResultats.length} article(s) enregistré(s)</div>
+    ${ticketResultats.map(r => `
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gris-clair);font-size:12px">
+        <span>${r.nom} <span style="color:var(--gris);font-size:10px">(${r.statut})</span></span>
+        <span style="font-weight:700;color:var(--vert)">${r.prix.toFixed(2).replace('.',',')} €${r.estPromo?' 🏷️':''}</span>
+      </div>`).join('')}`;
+}
+
+function fermerTicket() {
+  arreterScanTicket();
+  fermerModal('modal-ticket');
+  if (ticketResultats.length > 0) afficherToast(`${ticketResultats.length} article(s) enregistré(s) ✓`);
+  ticketResultats = [];
+  ticketProduitEnCours = null;
 }
 
 // ===== SCANNER =====
